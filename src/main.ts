@@ -187,6 +187,8 @@ closeIosModal.addEventListener('click', () => {
 // 6. Firestore Real-time Monitoring & Logging
 // ==========================================
 
+let isInitialLoad = true;
+
 // Track total device counts registered in Firestore
 function listenToDevicesCount() {
   onSnapshot(collection(db, 'device_tokens'), (snapshot) => {
@@ -207,6 +209,7 @@ function listenToRecentAlerts() {
           لا توجد نداءات طوارئ نشطة حالياً. التطبيق في حالة استعداد تام.
         </div>
       `;
+      isInitialLoad = false;
       return;
     }
 
@@ -236,6 +239,24 @@ function listenToRecentAlerts() {
       `;
       alertsLog.appendChild(logItem);
     });
+
+    // Detect new additions in real-time to trigger the physical siren/alarm on other devices!
+    snapshot.docChanges().forEach((change) => {
+      if (change.type === 'added' && !isInitialLoad) {
+        const data = change.doc.data();
+        if (data.deviceId !== deviceId) {
+          // Play tick beep sound and activate the full physical emergency siren
+          playTickSound();
+          startSiren();
+          showForegroundAlert(
+            '🚨 استغاثة عاجلة نشطة!',
+            'أرسل أحد الأجهزة نداء استغاثة SOS الآن! تم تفعيل صفارات الإنذار تلقائياً.'
+          );
+        }
+      }
+    });
+
+    isInitialLoad = false;
   }, (error) => {
     console.error("Error reading alert records: ", error);
   });
