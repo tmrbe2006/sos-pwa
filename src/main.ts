@@ -418,6 +418,7 @@ let isAlarmPlaying = false;
 
 // Trigger Tick Sound
 function playTickSound() {
+  audioTick.volume = 1.0;
   audioTick.currentTime = 0;
   audioTick.play().catch(e => console.log('Audio playback block: ', e));
 }
@@ -574,6 +575,7 @@ async function sendPushNotificationRequest(tokens: string[]) {
 
 function startSiren() {
   isAlarmPlaying = true;
+  audioAlarm.volume = 1.0;
   audioAlarm.currentTime = 0;
   audioAlarm.play().catch(e => console.log('Audio Siren Blocked: ', e));
   
