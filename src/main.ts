@@ -538,7 +538,7 @@ async function triggerSOS() {
 // Send request to Cloudflare Worker to send Push Notifications to devices
 async function sendPushNotificationRequest(tokens: string[]) {
   // Use a pseudo-mock workers link as specified by the user
-  const workerUrl = 'https://sos-worker.workers.dev/send';
+  const workerUrl = 'https://sos-sender.tmrbe2006.workers.dev/';
   
   const payload = {
     title: '🚨 نداء استغاثة عاجل (SOS)!',
