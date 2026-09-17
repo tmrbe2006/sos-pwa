@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 1. Global Safety Net - Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // 2. Global Security Helper Primitives
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    // 3. Validation Blueprints for Entities
+    function isValidDeviceToken(data) {
+      return data.keys().hasAll(['token', 'updatedAt', 'platform', 'deviceId'])
+        && data.keys().size() == 4
+        && data.token is string && data.token.size() <= 512
+        && data.platform == 'web'
+        && data.deviceId is string && data.deviceId.size() <= 128
+        && data.updatedAt == request.time;
+    }
+    
+    function isValidEmergencyCall(data) {
+      return data.keys().hasAll(['deviceId', 'message', 'timestamp'])
+        && data.keys().size() == 3
+        && data.deviceId is string && data.deviceId.size() <= 128
+        && data.message is string && data.message.size() <= 200
+        && data.timestamp == request.time;
+    }
+    
+    // 4. Matches & Security Enforcements per Collection
+    match /device_tokens/{deviceId} {
+      allow read: if isValidId(deviceId);
+      allow create, update: if isValidId(deviceId) && isValidDeviceToken(request.resource.data);
+      allow delete: if false; // Clients cannot delete registered tokens
+    }
+    
+    match /emergency_calls/{callId} {
+      allow read: if isValidId(callId);
+      allow create: if isValidId(callId) && isValidEmergencyCall(request.resource.data);
+      allow update, delete: if false; // Emergency call logs are immutable and cannot be tampered with
+    }
+  }
+}

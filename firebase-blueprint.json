@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "DeviceToken": {
+      "title": "DeviceToken",
+      "description": "FCM device tokens mapping for pushing emergency alerts",
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string",
+          "description": "The Firebase Cloud Messaging push token for the browser"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp indicating when the token was registered or updated"
+        },
+        "platform": {
+          "type": "string",
+          "description": "Identifies the operating platform, e.g. 'web' or 'android'"
+        },
+        "deviceId": {
+          "type": "string",
+          "description": "The unique device identifier stored in local client state"
+        }
+      },
+      "required": ["token", "updatedAt", "platform", "deviceId"]
+    },
+    "EmergencyCall": {
+      "title": "EmergencyCall",
+      "description": "Logs of triggered SOS alerts dispatched by active devices",
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string",
+          "description": "The unique identifier of the device initiating the SOS call"
+        },
+        "message": {
+          "type": "string",
+          "description": "Customizable emergency broadcast description message"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Strict server timestamp indicating when the alarm was triggered"
+        }
+      },
+      "required": ["deviceId", "message", "timestamp"]
+    }
+  },
+  "firestore": {
+    "device_tokens/{deviceId}": {
+      "schema": "DeviceToken",
+      "description": "Subscribed device registration tokens list used for messaging notifications."
+    },
+    "emergency_calls/{callId}": {
+      "schema": "EmergencyCall",
+      "description": "History of SOS emergency operations logged by users globally."
+    }
+  }
+}

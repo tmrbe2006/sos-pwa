@@ -1,0 +1,6 @@
+{
+  "name": "نداء طوارئ SOS",
+  "description": "تطبيق نداء طوارئ SOS ذكي وبسيط وقوي يدعم إشعارات PWA و Firebase",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

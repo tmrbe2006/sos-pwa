@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/* Custom Animations for SOS Rings */
+@keyframes ping-slow {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@keyframes ping-medium {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+@keyframes ping-fast {
+  0% {
+    transform: scale(0.98);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Utility Animations */
+.animate-ping-slow {
+  animation: ping-slow 3.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.animate-ping-medium {
+  animation: ping-medium 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.animate-ping-fast {
+  animation: ping-fast 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Custom Active Styling for SOS Button */
+#sos-button:active {
+  transform: scale(0.94);
+  filter: brightness(0.9);
+}
+
+/* Custom Scrollbar styling */
+#alerts-log::-webkit-scrollbar {
+  width: 4px;
+}
+#alerts-log::-webkit-scrollbar-track {
+  background: transparent;
+}
+#alerts-log::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 9999px;
+}
+.dark #alerts-log::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.5);
+}
+
+/* Prevent text selection and user zooming context on mobile */
+body {
+  -webkit-tap-highlight-color: transparent;
+}

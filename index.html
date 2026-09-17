@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="ar" dir="rtl" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>نداء طوارئ SOS | نظام الاستغاثة الذكي</title>
+    
+    <!-- Defensive Workaround for Environment fetch Mocking/Reassignment -->
+    <script>
+      (function() {
+        try {
+          var originalFetch = window.fetch;
+          var customFetch = originalFetch;
+          Object.defineProperty(window, 'fetch', {
+            get: function() {
+              return customFetch;
+            },
+            set: function(val) {
+              customFetch = val;
+            },
+            configurable: true,
+            enumerable: true
+          });
+        } catch (e) {
+          console.warn('Defensive fetch assignment wrap bypassed:', e);
+        }
+      })();
+    </script>
+    
+    <!-- PWA Configurations -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#dc2626" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="نداء طوارئ" />
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/564/564619.png" />
+    
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300 font-sans">
+    
+    <!-- Header -->
+    <header class="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
+      <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="relative flex h-3 w-3">
+            <span id="connection-pulse" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span id="connection-dot" class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+          </div>
+          <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-red-600 to-amber-500 bg-clip-text text-transparent">SOS نداء طوارئ</h1>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <!-- Install PWA button (Suppressed if running standalone) -->
+          <button id="pwa-install-btn" class="hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 active:scale-95 rounded-full transition-all shadow-md shadow-red-500/20">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            <span>تثبيت التطبيق</span>
+          </button>
+          
+          <!-- Theme Toggle -->
+          <button id="theme-toggle" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:scale-105 active:scale-95 transition-all" aria-label="تبديل المظهر">
+            <!-- Sun icon -->
+            <svg id="theme-sun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" /></svg>
+            <!-- Moon icon -->
+            <svg id="theme-moon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area (Mobile Friendly Scrollable) -->
+    <main class="flex-1 max-w-md w-full mx-auto px-4 py-6 flex flex-col justify-between gap-6 overflow-x-hidden">
+      
+      <!-- Top banner / Offline alert -->
+      <div id="offline-alert" class="hidden animate-fade-in bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 p-3 rounded-2xl text-center text-sm font-medium">
+        ⚠️ أنت تعمل في وضع عدم الاتصال (Offline). سيتم تخزين بعض العمليات محلياً.
+      </div>
+
+      <!-- Main Emergency Trigger Section -->
+      <section class="flex flex-col items-center justify-center my-auto py-4">
+        
+        <!-- Animated Ring & SOS Button -->
+        <div class="relative flex items-center justify-center w-72 h-72 mb-6">
+          <!-- Pulse rings -->
+          <div class="absolute inset-0 rounded-full bg-red-500/10 dark:bg-red-500/5 animate-ping-slow"></div>
+          <div class="absolute inset-4 rounded-full bg-red-500/20 dark:bg-red-500/10 animate-ping-medium"></div>
+          <div class="absolute inset-8 rounded-full bg-red-500/30 dark:bg-red-500/15 animate-ping-fast"></div>
+          
+          <!-- Outer border -->
+          <div class="absolute inset-12 rounded-full border-4 border-dashed border-red-500/30 dark:border-red-500/20 animate-spin-slow"></div>
+
+          <!-- Main SOS Button -->
+          <button id="sos-button" class="relative z-10 w-44 h-44 rounded-full bg-gradient-to-br from-red-500 to-rose-700 text-white font-extrabold text-4xl shadow-[0_0_50px_rgba(220,38,38,0.5)] active:shadow-[0_0_20px_rgba(220,38,38,0.3)] border-8 border-white dark:border-slate-900 select-none cursor-pointer flex flex-col items-center justify-center gap-1 transition-all duration-150">
+            <span class="tracking-widest">SOS</span>
+            <span class="text-xs font-semibold opacity-80 tracking-normal">إرسال استغاثة</span>
+          </button>
+          
+          <!-- Radial Countdown Circular Overlay -->
+          <div id="countdown-overlay" class="absolute inset-12 rounded-full bg-slate-950/90 text-white flex-col items-center justify-center gap-1 opacity-0 pointer-events-none scale-90 transition-all duration-200 hidden">
+            <span id="countdown-number" class="text-6xl font-black text-red-500">3</span>
+            <span class="text-xs text-slate-300 font-medium">اضغط لإلغاء الأمر</span>
+          </div>
+        </div>
+
+        <!-- Hint Text -->
+        <div class="text-center max-w-xs">
+          <p class="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1" id="sos-hint-text">
+            اضغط على زر SOS لتشغيل صفارة الإنذار وإرسال إشعار فوري لجميع الهواتف المسجلة.
+          </p>
+          <p class="text-xs text-red-500 font-medium hidden" id="countdown-hint">
+            جاري تحضير النداء... اضغط مجدداً في أي مكان للإلغاء!
+          </p>
+        </div>
+      </section>
+
+      <!-- Connection & Device Status Dashboard -->
+      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300">
+        <h2 class="text-sm font-bold text-slate-400 dark:text-slate-500 mb-3 tracking-wider uppercase">حالة الاتصال والـ Token</h2>
+        
+        <div class="space-y-3.5 text-sm">
+          <!-- Notification Permission Row -->
+          <div class="flex items-center justify-between">
+            <span class="text-slate-600 dark:text-slate-300">صلاحية الإشعارات:</span>
+            <span id="permission-badge" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">جاري التحقق</span>
+          </div>
+
+          <!-- Token Status Row -->
+          <div class="flex items-center justify-between gap-4">
+            <span class="text-slate-600 dark:text-slate-300 shrink-0">معرّف الجهاز (FCM Token):</span>
+            <div class="flex items-center gap-1.5 overflow-hidden">
+              <span id="token-status" class="truncate text-xs font-mono text-slate-400 dark:text-slate-500 max-w-[120px]">جاري الجلب...</span>
+              <button id="copy-token-btn" class="p-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" title="نسخ المعرف">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Registered Devices Count -->
+          <div class="flex items-center justify-between">
+            <span class="text-slate-600 dark:text-slate-300">عدد الأجهزة المسجلة في Firestore:</span>
+            <span id="devices-count" class="px-2 py-0.5 text-xs font-bold rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Recent Alerts and Simulation -->
+      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase">سجل نداءات الاستغاثة الواردة</h2>
+          <button id="clear-logs-btn" class="text-xs text-red-500 hover:underline">مسح السجل</button>
+        </div>
+
+        <!-- Scrollable alert logs list -->
+        <div id="alerts-log" class="space-y-2 max-h-40 overflow-y-auto pr-1">
+          <div class="text-center text-xs text-slate-400 dark:text-slate-500 py-4">
+            لا توجد نداءات طوارئ نشطة حالياً. التطبيق في حالة استعداد تام.
+          </div>
+        </div>
+
+        <!-- Simulation Toolcard -->
+        <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">أدوات محاكاة الإشعارات الفورية:</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="sim-foreground-btn" class="px-3 py-2 text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-center transition-all active:scale-95">
+              🔔 محاكاة إشعار مقدمة
+            </button>
+            <button id="trigger-alarm-btn" class="px-3 py-2 text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-center transition-all active:scale-95">
+              🔊 تجربة صفارة الإنذار
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Emergency Quick Contacts -->
+      <section class="grid grid-cols-3 gap-2">
+        <a href="tel:112" class="flex flex-col items-center justify-center p-3 bg-red-500/10 hover:bg-red-500/20 rounded-2xl text-red-600 dark:text-red-400 border border-red-500/20 transition-all text-center">
+          <span class="text-xs font-bold">الإسعاف</span>
+          <span class="text-sm font-black font-mono mt-0.5">112</span>
+        </a>
+        <a href="tel:122" class="flex flex-col items-center justify-center p-3 bg-blue-500/10 hover:bg-blue-500/20 rounded-2xl text-blue-600 dark:text-blue-400 border border-blue-500/20 transition-all text-center">
+          <span class="text-xs font-bold">الشرطة</span>
+          <span class="text-sm font-black font-mono mt-0.5">122</span>
+        </a>
+        <a href="tel:180" class="flex flex-col items-center justify-center p-3 bg-amber-500/10 hover:bg-amber-500/20 rounded-2xl text-amber-600 dark:text-amber-400 border border-amber-500/20 transition-all text-center">
+          <span class="text-xs font-bold">المطافئ</span>
+          <span class="text-sm font-black font-mono mt-0.5">180</span>
+        </a>
+      </section>
+
+    </main>
+
+    <!-- iOS Install Guide Modal Drawer -->
+    <div id="ios-install-modal" class="fixed inset-0 z-50 bg-slate-950/60 flex items-end justify-center p-4 transition-all duration-300 opacity-0 pointer-events-none hidden">
+      <div class="bg-white dark:bg-slate-900 rounded-t-3xl p-6 w-full max-w-md shadow-2xl transition-all duration-300 translate-y-full">
+        <div class="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-4"></div>
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2 text-center">تثبيت التطبيق على أجهزة iPhone / iPad</h3>
+        <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4 text-center">
+          لتحصل على كامل مميزات تطبيق الاستغاثة وتلقي الإشعارات حتى عندما يكون مغلقاً، يرجى تثبيته على شاشتك الرئيسية:
+        </p>
+        <div class="space-y-3 bg-slate-50 dark:bg-slate-850 p-4 rounded-2xl text-sm text-slate-700 dark:text-slate-200">
+          <div class="flex gap-2.5 items-start">
+            <span class="flex items-center justify-center w-5 h-5 rounded-full bg-red-600 text-white text-xs font-bold shrink-0">١</span>
+            <span>اضغط على زر <strong>مشاركة (Share)</strong> في شريط متصفح Safari بالأسفل.</span>
+          </div>
+          <div class="flex gap-2.5 items-start">
+            <span class="flex items-center justify-center w-5 h-5 rounded-full bg-red-600 text-white text-xs font-bold shrink-0">٢</span>
+            <span>قم بالتمرير للأسفل ثم اضغط على <strong>إضافة للشاشة الرئيسية (Add to Home Screen)</strong>.</span>
+          </div>
+        </div>
+        <button id="close-ios-modal" class="mt-5 w-full py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 transition-all active:scale-95">
+          موافق، تم الفهم
+        </button>
+      </div>
+    </div>
+
+    <!-- Hidden Audio elements for Alarm and countdown tick -->
+    <audio id="audio-alarm" loop src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" preload="auto"></audio>
+    <audio id="audio-tick" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
+
+    <!-- Footer -->
+    <footer class="max-w-md w-full mx-auto px-4 py-4 text-center text-[11px] text-slate-400 dark:text-slate-500">
+      جميع الحقوق محفوظة © 2026. تطبيق نداء طوارئ SOS الذكي.
+    </footer>
+
+    <!-- Core Script -->
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
