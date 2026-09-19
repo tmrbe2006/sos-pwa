@@ -145,6 +145,70 @@
         </div>
       </section>
 
+      <!-- Collapsible Telegram & WhatsApp SOS Settings -->
+      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300">
+        <button id="toggle-settings-btn" class="w-full flex items-center justify-between font-bold text-sm text-slate-700 dark:text-slate-300 tracking-wide uppercase text-right select-none">
+          <span class="flex items-center gap-2">
+            <span>⚙️ إعدادات قنوات الاستغاثة (واتساب وتيليجرام)</span>
+          </span>
+          <svg id="settings-chevron" class="w-4 h-4 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" /></svg>
+        </button>
+
+        <div id="settings-panel-container" class="hidden mt-4 space-y-4 border-t border-slate-100 dark:border-slate-800 pt-4 animate-fade-in text-sm">
+          <!-- Telegram Settings -->
+          <div class="space-y-3 bg-blue-500/5 p-4 rounded-2xl border border-blue-500/10">
+            <div class="flex items-center justify-between">
+              <label class="flex items-center gap-2 font-bold text-blue-600 dark:text-blue-400">
+                <input type="checkbox" id="telegram-enable" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4" />
+                <span>✈️ تفعيل إرسال تيليجرام (Telegram)</span>
+              </label>
+            </div>
+            
+            <div class="space-y-2">
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Bot Token (مفتاح البوت السري):</label>
+                <input type="password" id="telegram-bot-token" placeholder="مثال: 123456789:ABCdefGhI..." class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-left font-mono" dir="ltr" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Chat ID (معرف المجموعة أو المحادثة):</label>
+                <input type="text" id="telegram-chat-id" placeholder="مثال: -1001234567890" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-left font-mono" dir="ltr" />
+              </div>
+            </div>
+          </div>
+
+          <!-- WhatsApp Settings -->
+          <div class="space-y-3 bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10">
+            <div class="flex items-center justify-between">
+              <label class="flex items-center gap-2 font-bold text-emerald-600 dark:text-emerald-400">
+                <input type="checkbox" id="whatsapp-enable" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4" />
+                <span>💬 تفعيل إرسال واتساب (UltraMsg)</span>
+              </label>
+            </div>
+            
+            <div class="space-y-2">
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Instance ID (رقم السيرفر):</label>
+                <input type="text" id="whatsapp-instance-id" placeholder="مثال: instance12345" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 text-left font-mono" dir="ltr" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Token (المفتاح الخاص لـ UltraMsg):</label>
+                <input type="password" id="whatsapp-token" placeholder="مثال: abc123xyz..." class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 text-left font-mono" dir="ltr" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">أرقام هواتف المستلمين (مفصولة بفاصلة):</label>
+                <textarea id="whatsapp-recipients" rows="2" placeholder="مثال: 201012345678,201198765432" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 text-left font-mono" dir="ltr"></textarea>
+                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">ملاحظة: اكتب الأرقام مع كود الدولة وبدون علامة + وبدون مسافات.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Save Settings Button -->
+          <button id="save-settings-btn" class="w-full py-2.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold rounded-xl shadow-md transition-all text-center">
+            💾 حفظ وتفعيل الإعدادات
+          </button>
+        </div>
+      </section>
+
       <!-- Recent Alerts and Simulation -->
       <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300">
         <div class="flex items-center justify-between mb-3">

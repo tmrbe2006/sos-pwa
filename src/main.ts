@@ -4,6 +4,7 @@ import {
   collection, 
   doc, 
   setDoc, 
+  getDoc,
   getDocs, 
   onSnapshot, 
   serverTimestamp, 
@@ -77,6 +78,22 @@ const clearLogsBtn = document.getElementById('clear-logs-btn') as HTMLButtonElem
 
 const simForegroundBtn = document.getElementById('sim-foreground-btn') as HTMLButtonElement;
 const triggerAlarmBtn = document.getElementById('trigger-alarm-btn') as HTMLButtonElement;
+
+// Collapsible SOS Settings Selectors
+const toggleSettingsBtn = document.getElementById('toggle-settings-btn') as HTMLButtonElement;
+const settingsChevron = document.getElementById('settings-chevron') as unknown as HTMLElement;
+const settingsPanelContainer = document.getElementById('settings-panel-container') as HTMLElement;
+
+const telegramEnable = document.getElementById('telegram-enable') as HTMLInputElement;
+const telegramBotToken = document.getElementById('telegram-bot-token') as HTMLInputElement;
+const telegramChatId = document.getElementById('telegram-chat-id') as HTMLInputElement;
+
+const whatsappEnable = document.getElementById('whatsapp-enable') as HTMLInputElement;
+const whatsappInstanceId = document.getElementById('whatsapp-instance-id') as HTMLInputElement;
+const whatsappToken = document.getElementById('whatsapp-token') as HTMLInputElement;
+const whatsappRecipients = document.getElementById('whatsapp-recipients') as HTMLTextAreaElement;
+
+const saveSettingsBtn = document.getElementById('save-settings-btn') as HTMLButtonElement;
 
 // Audio Elements
 const audioAlarm = document.getElementById('audio-alarm') as HTMLAudioElement;
@@ -194,7 +211,7 @@ function listenToDevicesCount() {
   onSnapshot(collection(db, 'device_tokens'), (snapshot) => {
     devicesCountBadge.textContent = snapshot.size.toString();
   }, (error) => {
-    console.error("Error fetching devices count: ", error);
+    console.error("Error fetching devices count: ", error.message || String(error));
   });
 }
 
@@ -258,7 +275,7 @@ function listenToRecentAlerts() {
 
     isInitialLoad = false;
   }, (error) => {
-    console.error("Error reading alert records: ", error);
+    console.error("Error reading alert records: ", error.message || String(error));
   });
 }
 
@@ -289,7 +306,7 @@ async function setupNotifications() {
       const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
         scope: '/'
       });
-      console.log('Service Worker registered successfully: ', registration);
+      console.log('Service Worker registered successfully with scope: ', registration.scope);
 
       // Get FCM Token
       const token = await getToken(messaging, {
@@ -318,8 +335,8 @@ async function setupNotifications() {
     } else {
       tokenStatus.textContent = 'غير مرخص';
     }
-  } catch (error) {
-    console.error('An error occurred while retrieving token: ', error);
+  } catch (error: any) {
+    console.error('An error occurred while retrieving token: ', error.message || String(error));
     tokenStatus.textContent = 'خطأ في التهيئة';
   }
 }
@@ -359,7 +376,7 @@ copyTokenBtn.addEventListener('click', () => {
 // ==========================================
 
 onMessage(messaging, (payload) => {
-  console.log('Message received in foreground: ', payload);
+  console.log('Message received in foreground: ', { title: payload.notification?.title, body: payload.notification?.body });
   
   // 1. Play Warning Sound
   playTickSound();
@@ -510,8 +527,8 @@ async function triggerSOS() {
       timestamp: serverTimestamp()
     });
     console.log('Emergency broadcast recorded in database.');
-  } catch (error) {
-    console.error('Failed to log emergency record: ', error);
+  } catch (error: any) {
+    console.error('Failed to log emergency record: ', error.message || String(error));
   }
 
   // 3. Fetch all device tokens from Firestore and call Cloudflare worker simulation
@@ -530,8 +547,8 @@ async function triggerSOS() {
     // Dispatch Push notifications via Cloudflare Worker
     await sendPushNotificationRequest(tokens);
 
-  } catch (error) {
-    console.error('Error fetching device tokens for dispatch: ', error);
+  } catch (error: any) {
+    console.error('Error fetching device tokens for dispatch: ', error.message || String(error));
   }
 }
 
@@ -543,7 +560,16 @@ async function sendPushNotificationRequest(tokens: string[]) {
   const payload = {
     title: '🚨 نداء استغاثة عاجل (SOS)!',
     body: `تم إرسال استغاثة طوارئ من جهاز ${deviceId.substring(0, 8)}... يرجى التحرك فورا!`,
-    tokens: tokens
+    tokens: tokens,
+    telegram: emergencySettings.telegram.enable ? {
+      botToken: emergencySettings.telegram.botToken,
+      chatId: emergencySettings.telegram.chatId
+    } : null,
+    whatsapp: emergencySettings.whatsapp.enable ? {
+      instanceId: emergencySettings.whatsapp.instanceId,
+      token: emergencySettings.whatsapp.token,
+      recipients: emergencySettings.whatsapp.recipients.split(',').map(n => n.trim()).filter(Boolean)
+    } : null
   };
 
   console.log(`[Cloudflare Worker Fetch] Sending payload to ${workerUrl}:`, payload);
@@ -649,6 +675,109 @@ clearLogsBtn.addEventListener('click', () => {
 });
 
 // ==========================================
+// 10.5. Emergency Channels Settings Management
+// ==========================================
+
+let emergencySettings = {
+  telegram: {
+    enable: false,
+    botToken: '',
+    chatId: ''
+  },
+  whatsapp: {
+    enable: false,
+    instanceId: '',
+    token: '',
+    recipients: ''
+  }
+};
+
+function initSOSSettings() {
+  // Toggle Collapsible Settings Panel
+  toggleSettingsBtn.addEventListener('click', () => {
+    const isHidden = settingsPanelContainer.classList.toggle('hidden');
+    if (isHidden) {
+      settingsChevron.classList.remove('rotate-180');
+    } else {
+      settingsChevron.classList.add('rotate-180');
+    }
+  });
+
+  // Save Settings to Firestore
+  saveSettingsBtn.addEventListener('click', saveEmergencySettings);
+}
+
+async function loadEmergencySettings() {
+  try {
+    const docRef = doc(db, 'settings', 'emergency_channels');
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if (data.telegram) {
+        emergencySettings.telegram = data.telegram;
+        telegramEnable.checked = data.telegram.enable || false;
+        telegramBotToken.value = data.telegram.botToken || '';
+        telegramChatId.value = data.telegram.chatId || '';
+      }
+      if (data.whatsapp) {
+        emergencySettings.whatsapp = data.whatsapp;
+        whatsappEnable.checked = data.whatsapp.enable || false;
+        whatsappInstanceId.value = data.whatsapp.instanceId || '';
+        whatsappToken.value = data.whatsapp.token || '';
+        whatsappRecipients.value = data.whatsapp.recipients || '';
+      }
+      console.log('Emergency channels settings loaded successfully.');
+    }
+  } catch (error: any) {
+    console.error('Error loading emergency settings: ', error.message || String(error));
+  }
+}
+
+async function saveEmergencySettings() {
+  try {
+    saveSettingsBtn.disabled = true;
+    const originalText = saveSettingsBtn.textContent;
+    saveSettingsBtn.textContent = '⏳ جاري الحفظ وتحديث التفعيل...';
+
+    const settingsData = {
+      telegram: {
+        enable: telegramEnable.checked,
+        botToken: telegramBotToken.value.trim(),
+        chatId: telegramChatId.value.trim()
+      },
+      whatsapp: {
+        enable: whatsappEnable.checked,
+        instanceId: whatsappInstanceId.value.trim(),
+        token: whatsappToken.value.trim(),
+        recipients: whatsappRecipients.value.trim()
+      }
+    };
+
+    const docRef = doc(db, 'settings', 'emergency_channels');
+    await setDoc(docRef, settingsData);
+
+    // Update state in memory
+    emergencySettings = settingsData;
+
+    saveSettingsBtn.textContent = '✅ تم الحفظ وتفعيل القنوات!';
+    saveSettingsBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+    saveSettingsBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+
+    setTimeout(() => {
+      saveSettingsBtn.disabled = false;
+      saveSettingsBtn.textContent = originalText;
+      saveSettingsBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+      saveSettingsBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+    }, 2500);
+
+  } catch (error: any) {
+    saveSettingsBtn.disabled = false;
+    saveSettingsBtn.textContent = '❌ فشل حفظ الإعدادات';
+    console.error('Error saving emergency settings: ', error.message || String(error));
+  }
+}
+
+// ==========================================
 // 11. Core Bootstrapper
 // ==========================================
 
@@ -657,4 +786,6 @@ window.addEventListener('DOMContentLoaded', () => {
   setupNotifications();
   listenToDevicesCount();
   listenToRecentAlerts();
+  initSOSSettings();
+  loadEmergencySettings();
 });

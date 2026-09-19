@@ -19,16 +19,16 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
-  const notificationTitle = payload.notification?.title || '⚠️ نداء استغاثة عاجل SOS!';
+  const notificationTitle = payload.notification?.title || payload.data?.title || '⚠️ نداء استغاثة عاجل SOS!';
   const notificationOptions = {
-    body: payload.notification?.body || 'تم إرسال نداء طوارئ من أحد الأجهزة النشطة. اضغط للتحقق فورا.',
+    body: payload.notification?.body || payload.data?.body || 'تم إرسال نداء طوارئ من أحد الأجهزة النشطة. اضغط للتحقق فورا.',
     icon: 'https://cdn-icons-png.flaticon.com/512/564/564619.png',
     badge: 'https://cdn-icons-png.flaticon.com/512/564/564619.png',
     vibrate: [300, 100, 300, 100, 400, 100, 500],
     tag: 'sos-alert',
     renewed: true,
     data: {
-      click_action: payload.fcmOptions?.link || '/'
+      click_action: payload.fcmOptions?.link || payload.data?.click_action || '/'
     }
   };
 
