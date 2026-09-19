@@ -100,3 +100,60 @@
 body {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Print CSS Overrides for PDF Export */
+@media print {
+  /* Hide all screen elements */
+  body > *:not(#print-container-wrapper):not(#single-case-print-wrapper) {
+    display: none !important;
+  }
+
+  /* Force display of whichever wrapper is active */
+  #print-container-wrapper, #single-case-print-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+    font-family: system-ui, -apple-system, sans-serif !important;
+    direction: rtl !important;
+  }
+
+  #print-container-wrapper.hidden, #single-case-print-wrapper.hidden {
+    display: none !important;
+  }
+
+  #print-container-wrapper:not(.hidden), #single-case-print-wrapper:not(.hidden) {
+    display: block !important;
+  }
+
+  /* Clean up tables, forces black text and visible borders during PDF saving */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    margin-top: 15px !important;
+  }
+
+  th, td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 8px !important;
+    font-size: 10px !important;
+    color: black !important;
+    background: white !important;
+    text-align: right !important;
+  }
+
+  th {
+    background-color: #f8fafc !important;
+    font-weight: bold !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Page margins */
+  @page {
+    margin: 1.5cm;
+    size: A4 portrait;
+  }
+}

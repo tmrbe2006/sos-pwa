@@ -69,211 +69,511 @@
         </div>
       </div>
     </header>
+    
+    <!-- User Status Banner (Visible only when logged in) -->
+    <div id="user-status-banner" class="hidden bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
+      <div class="max-w-md mx-auto px-4 py-2 flex items-center justify-between text-xs font-semibold">
+        <div class="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+          <span>المستخدم النشط:</span>
+          <span id="active-user-name" class="font-bold text-slate-800 dark:text-slate-100"></span>
+          <span id="active-user-role" class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px]"></span>
+        </div>
+        <button id="logout-btn" class="text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-colors flex items-center gap-1 font-bold">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+          <span>تسجيل خروج</span>
+        </button>
+      </div>
+    </div>
 
     <!-- Main Content Area (Mobile Friendly Scrollable) -->
-    <main class="flex-1 max-w-md w-full mx-auto px-4 py-6 flex flex-col justify-between gap-6 overflow-x-hidden">
+    <main id="main-container" class="flex-1 max-w-md w-full mx-auto px-4 py-6 flex flex-col justify-between gap-6 overflow-x-hidden transition-all duration-300">
       
       <!-- Top banner / Offline alert -->
       <div id="offline-alert" class="hidden animate-fade-in bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 p-3 rounded-2xl text-center text-sm font-medium">
         ⚠️ أنت تعمل في وضع عدم الاتصال (Offline). سيتم تخزين بعض العمليات محلياً.
       </div>
 
-      <!-- Main Emergency Trigger Section -->
-      <section class="flex flex-col items-center justify-center my-auto py-4">
+      <!-- WORKER TERMINAL PANEL (Visible to Worker/عامل role) -->
+      <div id="worker-panel" class="space-y-6 flex flex-col flex-1 justify-between">
         
-        <!-- Animated Ring & SOS Button -->
-        <div class="relative flex items-center justify-center w-72 h-72 mb-6">
-          <!-- Pulse rings -->
-          <div class="absolute inset-0 rounded-full bg-red-500/10 dark:bg-red-500/5 animate-ping-slow"></div>
-          <div class="absolute inset-4 rounded-full bg-red-500/20 dark:bg-red-500/10 animate-ping-medium"></div>
-          <div class="absolute inset-8 rounded-full bg-red-500/30 dark:bg-red-500/15 animate-ping-fast"></div>
+        <!-- Location & Resident Selection Card -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm space-y-4">
+          <h3 class="text-xs font-black text-slate-800 dark:text-white border-b border-slate-100 dark:border-slate-800/60 pb-2 flex items-center gap-1.5">
+            <span>📍</span>
+            <span>موقع الاستغاثة والمقيم:</span>
+          </h3>
           
-          <!-- Outer border -->
-          <div class="absolute inset-12 rounded-full border-4 border-dashed border-red-500/30 dark:border-red-500/20 animate-spin-slow"></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">الجناح:</label>
+              <select id="sos-wing-select" class="w-full px-2.5 py-1.5 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/40">
+                <option value="general">🚨 نداء عام (كامل المركز)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">السرير:</label>
+              <select id="sos-bed-select" class="w-full px-2.5 py-1.5 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/40" disabled>
+                <option value="none">-- اختر الجناح أولاً --</option>
+              </select>
+            </div>
+          </div>
 
-          <!-- Main SOS Button -->
-          <button id="sos-button" class="relative z-10 w-44 h-44 rounded-full bg-gradient-to-br from-red-500 to-rose-700 text-white font-extrabold text-4xl shadow-[0_0_50px_rgba(220,38,38,0.5)] active:shadow-[0_0_20px_rgba(220,38,38,0.3)] border-8 border-white dark:border-slate-900 select-none cursor-pointer flex flex-col items-center justify-center gap-1 transition-all duration-150">
-            <span class="tracking-widest">SOS</span>
-            <span class="text-xs font-semibold opacity-80 tracking-normal">إرسال استغاثة</span>
-          </button>
-          
-          <!-- Radial Countdown Circular Overlay -->
-          <div id="countdown-overlay" class="absolute inset-12 rounded-full bg-slate-950/90 text-white flex-col items-center justify-center gap-1 opacity-0 pointer-events-none scale-90 transition-all duration-200 hidden">
-            <span id="countdown-number" class="text-6xl font-black text-red-500">3</span>
-            <span class="text-xs text-slate-300 font-medium">اضغط لإلغاء الأمر</span>
+          <!-- Selected Resident Bio -->
+          <div id="selected-resident-bio" class="hidden p-3 bg-red-500/5 rounded-2xl border border-red-500/10 flex items-center gap-3 animate-fade-in">
+            <span class="text-xl">👤</span>
+            <div>
+              <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold">المقيم في هذا السرير:</span>
+              <span id="selected-resident-name" class="text-xs font-extrabold text-red-600 dark:text-red-400">جاري التحميل...</span>
+            </div>
+          </div>
+
+          <!-- Optional Caller Notes -->
+          <div class="mt-2">
+            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">📝 ملاحظات إضافية مرسلة مع البلاغ (اختياري):</label>
+            <input type="text" id="sos-caller-notes" placeholder="مثال: سقوط أرضاً، صعوبة في التنفس، طلب كوب ماء..." class="w-full px-2.5 py-1.5 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/40" />
           </div>
         </div>
 
-        <!-- Hint Text -->
-        <div class="text-center max-w-xs">
-          <p class="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1" id="sos-hint-text">
-            اضغط على زر SOS لتشغيل صفارة الإنذار وإرسال إشعار فوري لجميع الهواتف المسجلة.
-          </p>
-          <p class="text-xs text-red-500 font-medium hidden" id="countdown-hint">
-            جاري تحضير النداء... اضغط مجدداً في أي مكان للإلغاء!
-          </p>
-        </div>
-      </section>
+        <!-- Main Emergency Trigger Section -->
+        <section class="flex flex-col items-center justify-center my-auto py-4">
+          
+          <!-- Animated Ring & SOS Button -->
+          <div class="relative flex items-center justify-center w-72 h-72 mb-6">
+            <!-- Pulse rings -->
+            <div class="absolute inset-0 rounded-full bg-red-500/10 dark:bg-red-500/5 animate-ping-slow"></div>
+            <div class="absolute inset-4 rounded-full bg-red-500/20 dark:bg-red-500/10 animate-ping-medium"></div>
+            <div class="absolute inset-8 rounded-full bg-red-500/30 dark:bg-red-500/15 animate-ping-fast"></div>
+            
+            <!-- Outer border -->
+            <div class="absolute inset-12 rounded-full border-4 border-dashed border-red-500/30 dark:border-red-500/20 animate-spin-slow"></div>
 
-      <!-- Connection & Device Status Dashboard -->
-      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300">
-        <h2 class="text-sm font-bold text-slate-400 dark:text-slate-500 mb-3 tracking-wider uppercase">حالة الاتصال والـ Token</h2>
-        
-        <div class="space-y-3.5 text-sm">
-          <!-- Notification Permission Row -->
-          <div class="flex items-center justify-between">
-            <span class="text-slate-600 dark:text-slate-300">صلاحية الإشعارات:</span>
-            <span id="permission-badge" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">جاري التحقق</span>
+            <!-- Main SOS Button -->
+            <button id="sos-button" class="relative z-10 w-44 h-44 rounded-full bg-gradient-to-br from-red-500 to-rose-700 text-white font-extrabold text-4xl shadow-[0_0_50px_rgba(220,38,38,0.5)] active:shadow-[0_0_20px_rgba(220,38,38,0.3)] border-8 border-white dark:border-slate-900 select-none cursor-pointer flex flex-col items-center justify-center gap-1 transition-all duration-150">
+              <span class="tracking-widest">SOS</span>
+              <span class="text-xs font-semibold opacity-80 tracking-normal">إرسال استغاثة</span>
+            </button>
+            
+            <!-- Radial Countdown Circular Overlay -->
+            <div id="countdown-overlay" class="absolute inset-12 rounded-full bg-slate-950/90 text-white flex-col items-center justify-center gap-1 opacity-0 pointer-events-none scale-90 transition-all duration-200 hidden">
+              <span id="countdown-number" class="text-6xl font-black text-red-500">3</span>
+              <span class="text-xs text-slate-300 font-medium">اضغط لإلغاء الأمر</span>
+            </div>
           </div>
 
-          <!-- Token Status Row -->
-          <div class="flex items-center justify-between gap-4">
-            <span class="text-slate-600 dark:text-slate-300 shrink-0">معرّف الجهاز (FCM Token):</span>
-            <div class="flex items-center gap-1.5 overflow-hidden">
-              <span id="token-status" class="truncate text-xs font-mono text-slate-400 dark:text-slate-500 max-w-[120px]">جاري الجلب...</span>
-              <button id="copy-token-btn" class="p-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" title="نسخ المعرف">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+          <!-- Hint Text -->
+          <div class="text-center max-w-xs">
+            <p class="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1" id="sos-hint-text">
+              اضغط على زر SOS لتشغيل صفارة الإنذار وإرسال إشعار فوري لجميع الهواتف المسجلة.
+            </p>
+            <p class="text-xs text-red-500 font-medium hidden" id="countdown-hint">
+              جاري تحضير النداء... اضغط مجدداً في أي مكان للإلغاء!
+            </p>
+          </div>
+        </section>
+
+        <!-- Emergency Quick Contacts -->
+        <section class="grid grid-cols-3 gap-2">
+          <a href="tel:112" class="flex flex-col items-center justify-center p-3 bg-red-500/10 hover:bg-red-500/20 rounded-2xl text-red-600 dark:text-red-400 border border-red-500/20 transition-all text-center">
+            <span class="text-xs font-bold">الإسعاف</span>
+            <span class="text-sm font-black font-mono mt-0.5">112</span>
+          </a>
+          <a href="tel:122" class="flex flex-col items-center justify-center p-3 bg-blue-500/10 hover:bg-blue-500/20 rounded-2xl text-blue-600 dark:text-blue-400 border border-blue-500/20 transition-all text-center">
+            <span class="text-xs font-bold">الشرطة</span>
+            <span class="text-sm font-black font-mono mt-0.5">122</span>
+          </a>
+          <a href="tel:180" class="flex flex-col items-center justify-center p-3 bg-amber-500/10 hover:bg-amber-500/20 rounded-2xl text-amber-600 dark:text-amber-400 border border-amber-500/20 transition-all text-center">
+            <span class="text-xs font-bold">المطافئ</span>
+            <span class="text-sm font-black font-mono mt-0.5">180</span>
+          </a>
+        </section>
+      </div>
+
+      <!-- MONITORING TERMINAL PANEL (Visible to Monitor/Tech/Admin roles) -->
+      <div id="monitor-panel" class="hidden space-y-6 flex flex-col flex-1">
+        
+        <!-- Premium Live Telemetry Metrics Row -->
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <!-- System Status Card -->
+          <div class="bg-gradient-to-br from-slate-50 to-white dark:from-slate-900/40 dark:to-slate-950/40 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center gap-3.5 shadow-sm transition-all duration-300">
+            <div id="system-status-indicator" class="w-11 h-11 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl shrink-0">
+              🛡️
+            </div>
+            <div>
+              <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">حالة النظام</span>
+              <span id="system-status-text" class="text-sm font-black text-emerald-600 dark:text-emerald-400">آمن ومستقر</span>
+            </div>
+          </div>
+
+          <!-- Active Cases Count Card -->
+          <div class="bg-gradient-to-br from-slate-50 to-white dark:from-slate-900/40 dark:to-slate-950/40 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center gap-3.5 shadow-sm transition-all duration-300">
+            <div id="active-cases-indicator" class="w-11 h-11 rounded-2xl bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center text-xl shrink-0 animate-pulse">
+              🚨
+            </div>
+            <div>
+              <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">الحالات النشطة</span>
+              <span id="monitoring-active-count" class="text-sm font-black text-red-600">0 بلاغ</span>
+            </div>
+          </div>
+
+          <!-- Total Connected Devices Card -->
+          <div class="col-span-2 md:col-span-1 bg-gradient-to-br from-slate-50 to-white dark:from-slate-900/40 dark:to-slate-950/40 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center gap-3.5 shadow-sm transition-all duration-300">
+            <div class="w-11 h-11 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl shrink-0">
+              📱
+            </div>
+            <div>
+              <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">الأجهزة المتصلة</span>
+              <span id="monitoring-devices-count" class="text-sm font-black text-indigo-600 dark:text-indigo-400">0 جهاز</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 Column command bento grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+          
+          <!-- Column 1 & 2 (Span 2) - Active Calls Monitor View -->
+          <div class="md:col-span-2 space-y-6">
+            <!-- Central Command Screen -->
+            <section id="active-alerts-dashboard" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm transition-all duration-300">
+              <div class="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                <div class="flex items-center gap-2">
+                  <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+                  </span>
+                  <h2 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">شاشة المتابعة ورصد الاستغاثات الحية</h2>
+                </div>
+                <span id="active-alerts-count" class="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-red-500/10 text-red-600">0 بلاغ نشط</span>
+              </div>
+              
+              <!-- Active Alerts Dynamic Container -->
+              <div id="active-alerts-container" class="space-y-4 min-h-[250px] max-h-[500px] overflow-y-auto pr-1">
+                <!-- Loaded Dynamically via JS -->
+                <div class="text-center text-xs text-slate-400 py-12">
+                  لا توجد بلاغات نشطة حالياً. جميع الأنظمة مستقرة.
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Column 3 (Span 1) - Control Panels & Logs -->
+          <div class="space-y-6">
+            
+            <!-- Connection & Device Status Dashboard -->
+            <section id="connection-status-section" class="hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300">
+              <h2 class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 tracking-wider uppercase">حالة الاتصال والـ Token</h2>
+              
+              <div class="space-y-3.5 text-sm">
+                <!-- Notification Permission Row -->
+                <div class="flex items-center justify-between">
+                  <span class="text-xs text-slate-600 dark:text-slate-300">صلاحية الإشعارات:</span>
+                  <span id="permission-badge" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">جاري التحقق</span>
+                </div>
+
+                <!-- Token Status Row -->
+                <div class="flex items-center justify-between gap-4">
+                  <span class="text-xs text-slate-600 dark:text-slate-300 shrink-0">معرّف الجهاز (FCM):</span>
+                  <div class="flex items-center gap-1.5 overflow-hidden">
+                    <span id="token-status" class="truncate text-[10px] font-mono text-slate-400 dark:text-slate-500 max-w-[100px]">جاري الجلب...</span>
+                    <button id="copy-token-btn" class="p-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" title="نسخ المعرف">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Registered Devices Count -->
+                <div class="flex items-center justify-between">
+                  <span class="text-xs text-slate-600 dark:text-slate-300">الأجهزة المسجلة:</span>
+                  <span id="devices-count" class="px-2 py-0.5 text-[10px] font-bold rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">0</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- Collapsible Telegram & WhatsApp SOS Settings -->
+            <section id="sos-channels-settings-section" class="hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300">
+              <button id="toggle-settings-btn" class="w-full flex items-center justify-between font-bold text-xs text-slate-700 dark:text-slate-300 tracking-wide uppercase text-right select-none">
+                <span class="flex items-center gap-1.5">
+                  <span>⚙️ إعدادات القنوات</span>
+                </span>
+                <svg id="settings-chevron" class="w-4 h-4 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" /></svg>
               </button>
-            </div>
-          </div>
 
-          <!-- Registered Devices Count -->
-          <div class="flex items-center justify-between">
-            <span class="text-slate-600 dark:text-slate-300">عدد الأجهزة المسجلة في Firestore:</span>
-            <span id="devices-count" class="px-2 py-0.5 text-xs font-bold rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">0</span>
+              <div id="settings-panel-container" class="hidden mt-4 space-y-4 border-t border-slate-100 dark:border-slate-800 pt-4 animate-fade-in text-sm">
+                <!-- Telegram Settings -->
+                <div class="space-y-3 bg-blue-500/5 p-4 rounded-2xl border border-blue-500/10">
+                  <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2 font-bold text-blue-600 dark:text-blue-400 text-xs">
+                      <input type="checkbox" id="telegram-enable" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4" />
+                      <span>✈️ تيليجرام (Telegram)</span>
+                    </label>
+                  </div>
+                  
+                  <div class="space-y-2">
+                    <div>
+                      <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Bot Token:</label>
+                      <input type="password" id="telegram-bot-token" placeholder="Bot Token" class="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-left font-mono" dir="ltr" />
+                    </div>
+                    <div>
+                      <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Chat ID:</label>
+                      <input type="text" id="telegram-chat-id" placeholder="Chat ID" class="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-left font-mono" dir="ltr" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- WhatsApp Settings -->
+                <div class="space-y-3 bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10">
+                  <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2 font-bold text-emerald-600 dark:text-emerald-400 text-xs">
+                      <input type="checkbox" id="whatsapp-enable" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4" />
+                      <span>💬 واتساب (UltraMsg)</span>
+                    </label>
+                  </div>
+                  
+                  <div class="space-y-2">
+                    <div>
+                      <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Instance ID:</label>
+                      <input type="text" id="whatsapp-instance-id" placeholder="Instance ID" class="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 text-left font-mono" dir="ltr" />
+                    </div>
+                    <div>
+                      <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Token:</label>
+                      <input type="password" id="whatsapp-token" placeholder="Token" class="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 text-left font-mono" dir="ltr" />
+                    </div>
+                    <div>
+                      <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">أرقام هواتف المستلمين:</label>
+                      <textarea id="whatsapp-recipients" rows="2" placeholder="أرقام هواتف المستلمين" class="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 text-left font-mono" dir="ltr"></textarea>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Email Settings -->
+                <div class="space-y-3 bg-violet-500/5 p-4 rounded-2xl border border-violet-500/10">
+                  <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2 font-bold text-violet-600 dark:text-violet-400 text-xs">
+                      <input type="checkbox" id="email-enable" class="rounded border-slate-300 text-violet-600 focus:ring-violet-500 w-4 h-4" />
+                      <span>📧 بريد SOS (Email)</span>
+                    </label>
+                  </div>
+                  
+                  <div class="space-y-2">
+                    <div>
+                      <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">طريقة الإرسال:</label>
+                      <select id="email-service-type" class="w-full px-2 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+                        <option value="gmail">📨 إيميل شخصي (Apps Script)</option>
+                        <option value="resend">🏢 دومين تجاري (Resend)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label id="email-credential-label" class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">الرابط / المفتاح الخاص:</label>
+                      <input type="password" id="email-api-key" placeholder="الرابط / المفتاح" class="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-violet-500/40 text-left font-mono" dir="ltr" />
+                    </div>
+                    <div id="email-sender-container" class="hidden">
+                      <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">بريد المرسل المعتمد:</label>
+                      <input type="email" id="email-sender" placeholder="Sender Email" class="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-violet-500/40 text-left font-mono" dir="ltr" />
+                    </div>
+                    <div>
+                      <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">المستقبلين:</label>
+                      <textarea id="email-recipients" rows="2" placeholder="المستقبلين" class="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-violet-500/40 text-left font-mono" dir="ltr"></textarea>
+                      <p id="email-hint-text" class="text-[10px] text-slate-400 dark:text-slate-500 mt-1"></p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Save Settings Button -->
+                <button id="save-settings-btn" class="w-full py-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold rounded-xl text-xs transition-all">
+                  💾 حفظ وتفعيل الإعدادات
+                </button>
+              </div>
+            </section>
+
+            <!-- User Management Section (Visible to Admin/المالك) -->
+            <section id="user-management-section" class="hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300">
+              <h2 class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 tracking-wider uppercase">👥 إدارة المستخدمين (المالك)</h2>
+              
+              <!-- Add New User Form -->
+              <form id="add-user-form" class="space-y-3 bg-indigo-500/5 p-4 rounded-2xl border border-indigo-500/10 mb-4">
+                <h3 class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">➕ إضافة مستخدم جديد</h3>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[9px] font-semibold text-slate-500 mb-0.5">الاسم الكامل:</label>
+                    <input type="text" id="new-user-name" required placeholder="أحمد علي" class="w-full px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-[9px] font-semibold text-slate-500 mb-0.5">اسم المستخدم:</label>
+                    <input type="text" id="new-user-username" required placeholder="ahmed" class="w-full px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none text-left font-mono" dir="ltr" />
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[9px] font-semibold text-slate-500 mb-0.5">كلمة المرور:</label>
+                    <input type="password" id="new-user-password" required placeholder="••••" class="w-full px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none text-left font-mono" dir="ltr" />
+                  </div>
+                  <div>
+                    <label class="block text-[9px] font-semibold text-slate-500 mb-0.5">نوع المستخدم:</label>
+                    <select id="new-user-role" class="w-full px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none">
+                      <option value="عامل">عامل</option>
+                      <option value="فني طوارئ">فني طوارئ</option>
+                      <option value="مراقب">مراقب</option>
+                      <option value="المالك">المالك</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" class="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] rounded shadow-sm transition-all">
+                  ✨ إضافة المستخدم
+                </button>
+              </form>
+
+              <!-- Current Registered Users List -->
+              <div>
+                <h3 class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1.5">📋 المستخدمين المسجلين حالياً:</h3>
+                <div id="users-list-container" class="space-y-2 max-h-36 overflow-y-auto pr-1">
+                  <!-- Loaded via JS -->
+                </div>
+              </div>
+            </section>
+
+            <!-- Wing & Bed Management Section (Visible to Admin/المالك) -->
+            <section id="wing-management-section" class="hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300 space-y-5">
+              <h2 class="text-xs font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase">🏢 إدارة الأجنحة والأسرة والمقيمين (المالك)</h2>
+              
+              <!-- 1. Add Wing Form -->
+              <form id="add-wing-form" class="space-y-3 bg-red-500/5 p-4 rounded-2xl border border-red-500/10">
+                <h3 class="text-[10px] font-bold text-red-600 dark:text-red-400">➕ إضافة جناح جديد</h3>
+                <div>
+                  <label class="block text-[9px] font-semibold text-slate-500 mb-0.5">اسم الجناح بالعربية:</label>
+                  <input type="text" id="new-wing-name" required placeholder="جناح الياسمين - الطابق الثاني" class="w-full px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none" />
+                </div>
+                <button type="submit" class="w-full py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] rounded shadow-sm transition-all">
+                  ✨ إضافة جناح جديد
+                </button>
+              </form>
+
+              <!-- 2. Add Bed Form -->
+              <form id="add-bed-form" class="space-y-3 bg-indigo-500/5 p-4 rounded-2xl border border-indigo-500/10">
+                <h3 class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">🛏️ إضافة سرير ومقيم إلى جناح</h3>
+                <div>
+                  <label class="block text-[9px] font-semibold text-slate-500 mb-0.5">اختر الجناح:</label>
+                  <select id="bed-wing-select" class="w-full px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none">
+                    <!-- Populated via JS -->
+                  </select>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[9px] font-semibold text-slate-500 mb-0.5">رمز / رقم السرير:</label>
+                    <input type="text" id="new-bed-id" required placeholder="سرير ١٠٤" class="w-full px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-[9px] font-semibold text-slate-500 mb-0.5">اسم المقيم الحالي:</label>
+                    <input type="text" id="new-resident-name" required placeholder="العم عبدالرحمن" class="w-full px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none" />
+                  </div>
+                </div>
+                <button type="submit" class="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] rounded shadow-sm transition-all">
+                  ✨ إضافة السرير والمقيم
+                </button>
+              </form>
+
+              <!-- 3. Current Registry view -->
+              <div>
+                <h3 class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1.5">📋 سجل الأجنحة والغرف والأسرة:</h3>
+                <div id="wings-registry-container" class="space-y-3 max-h-56 overflow-y-auto pr-1">
+                  <!-- Loaded via JS -->
+                </div>
+              </div>
+            </section>
+
+            <!-- Analytical Reports Section (Visible to Admin/المالك only) -->
+            <section id="reports-section" class="hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300 space-y-6">
+              <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                <div class="flex items-center gap-2">
+                  <span class="text-xl">📊</span>
+                  <h2 class="text-xs font-black text-slate-800 dark:text-white tracking-wider uppercase">تقرير الأداء وسجل سرعة الاستجابة للنداءات المغلقة</h2>
+                </div>
+                <button id="print-report-btn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] rounded-xl shadow-sm transition-all flex items-center gap-1 active:scale-95">
+                  🖨️ طباعة التقرير / حفظ PDF
+                </button>
+              </div>
+
+              <!-- Key Metrics / KPIs -->
+              <div class="grid grid-cols-3 gap-3">
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/60 text-center">
+                  <span class="block text-[9px] text-slate-400 dark:text-slate-500 font-bold mb-1">متوسط زمن الاستجابة</span>
+                  <span id="avg-response-time-kpi" class="text-xs font-black text-slate-800 dark:text-white">-</span>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/60 text-center">
+                  <span class="block text-[9px] text-slate-400 dark:text-slate-500 font-bold mb-1">الحالات المحلولة</span>
+                  <span id="resolved-calls-count-kpi" class="text-xs font-black text-emerald-600 dark:text-emerald-400">0</span>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/60 text-center">
+                  <span class="block text-[9px] text-slate-400 dark:text-slate-500 font-bold mb-1">كفاءة الاستجابة الفائقة</span>
+                  <span id="excellent-rate-kpi" class="text-xs font-black text-indigo-600 dark:text-indigo-400">0%</span>
+                </div>
+              </div>
+
+              <!-- Filter Controls -->
+              <div class="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/60">
+                <span class="text-[9px] font-bold text-slate-500">تصفية التقرير والمستوى:</span>
+                <select id="report-filter-speed" class="text-[10px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1 text-slate-700 dark:text-slate-300">
+                  <option value="all">كل الاستجابات والمستويات</option>
+                  <option value="excellent">ممتازة (أقل من 3 دقائق) ⚡</option>
+                  <option value="standard">مقبولة (3 - 7 دقائق) 🟢</option>
+                  <option value="delayed">متأخرة (أكثر من 7 دقائق) ⚠️</option>
+                </select>
+              </div>
+
+              <!-- Printable Report Document Container -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-right text-[10px] border-collapse min-w-[650px]">
+                  <thead>
+                    <tr class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-800">
+                      <th class="p-2 border-l border-slate-200 dark:border-slate-800">تاريخ البلاغ</th>
+                      <th class="p-2 border-l border-slate-200 dark:border-slate-800">اسم المبلغ</th>
+                      <th class="p-2 border-l border-slate-200 dark:border-slate-800">الموقع والمقيم</th>
+                      <th class="p-2 border-l border-slate-200 dark:border-slate-800">ملاحظات المبلغ</th>
+                      <th class="p-2 border-l border-slate-200 dark:border-slate-800">إغلاق البلاغ</th>
+                      <th class="p-2 border-l border-slate-200 dark:border-slate-800">المدة والتحليل</th>
+                    </tr>
+                  </thead>
+                  <tbody id="report-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
+                    <!-- Loaded dynamically via JS -->
+                    <tr>
+                      <td colspan="6" class="p-4 text-center text-slate-400 dark:text-slate-500">لا توجد بلاغات محلولة في السجل حتى الآن.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <!-- Recent Alerts Logs section (Archive) -->
+            <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300">
+              <div class="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800/80 pb-2">
+                <h2 class="text-xs font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase">📜 أرشيف الاتصالات الكلي</h2>
+                <button id="clear-logs-btn" class="text-[10px] text-red-500 hover:underline">مسح السجل</button>
+              </div>
+
+              <!-- Scrollable alert logs list -->
+              <div id="alerts-log" class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                <div class="text-center text-xs text-slate-400 dark:text-slate-500 py-4">
+                  لا توجد نداءات طوارئ حالياً.
+                </div>
+              </div>
+
+              <!-- Simulation Toolcard -->
+              <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <h3 class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2">أدوات محاكاة الإشعارات والصفارة:</h3>
+                <div class="grid grid-cols-2 gap-2">
+                  <button id="sim-foreground-btn" class="px-2.5 py-1.5 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-center transition-all">
+                    🔔 محاكاة إشعار
+                  </button>
+                  <button id="trigger-alarm-btn" class="px-2.5 py-1.5 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-center transition-all">
+                    🔊 تجربة الصفارة
+                  </button>
+                </div>
+              </div>
+            </section>
+
           </div>
         </div>
-      </section>
 
-      <!-- Collapsible Telegram & WhatsApp SOS Settings -->
-      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300">
-        <button id="toggle-settings-btn" class="w-full flex items-center justify-between font-bold text-sm text-slate-700 dark:text-slate-300 tracking-wide uppercase text-right select-none">
-          <span class="flex items-center gap-2">
-            <span>⚙️ إعدادات قنوات الاستغاثة (واتساب وتيليجرام)</span>
-          </span>
-          <svg id="settings-chevron" class="w-4 h-4 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" /></svg>
-        </button>
-
-        <div id="settings-panel-container" class="hidden mt-4 space-y-4 border-t border-slate-100 dark:border-slate-800 pt-4 animate-fade-in text-sm">
-          <!-- Telegram Settings -->
-          <div class="space-y-3 bg-blue-500/5 p-4 rounded-2xl border border-blue-500/10">
-            <div class="flex items-center justify-between">
-              <label class="flex items-center gap-2 font-bold text-blue-600 dark:text-blue-400">
-                <input type="checkbox" id="telegram-enable" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4" />
-                <span>✈️ تفعيل إرسال تيليجرام (Telegram)</span>
-              </label>
-            </div>
-            
-            <div class="space-y-2">
-              <div>
-                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Bot Token (مفتاح البوت السري):</label>
-                <input type="password" id="telegram-bot-token" placeholder="مثال: 123456789:ABCdefGhI..." class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-left font-mono" dir="ltr" />
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Chat ID (معرف المجموعة أو المحادثة):</label>
-                <input type="text" id="telegram-chat-id" placeholder="مثال: -1001234567890" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-left font-mono" dir="ltr" />
-              </div>
-            </div>
-          </div>
-
-          <!-- WhatsApp Settings -->
-          <div class="space-y-3 bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10">
-            <div class="flex items-center justify-between">
-              <label class="flex items-center gap-2 font-bold text-emerald-600 dark:text-emerald-400">
-                <input type="checkbox" id="whatsapp-enable" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4" />
-                <span>💬 تفعيل إرسال واتساب (UltraMsg)</span>
-              </label>
-            </div>
-            
-            <div class="space-y-2">
-              <div>
-                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Instance ID (رقم السيرفر):</label>
-                <input type="text" id="whatsapp-instance-id" placeholder="مثال: instance12345" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 text-left font-mono" dir="ltr" />
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Token (المفتاح الخاص لـ UltraMsg):</label>
-                <input type="password" id="whatsapp-token" placeholder="مثال: abc123xyz..." class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 text-left font-mono" dir="ltr" />
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">أرقام هواتف المستلمين (مفصولة بفاصلة):</label>
-                <textarea id="whatsapp-recipients" rows="2" placeholder="مثال: 201012345678,201198765432" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 text-left font-mono" dir="ltr"></textarea>
-                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">ملاحظة: اكتب الأرقام مع كود الدولة وبدون علامة + وبدون مسافات.</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Email Settings -->
-          <div class="space-y-3 bg-violet-500/5 p-4 rounded-2xl border border-violet-500/10">
-            <div class="flex items-center justify-between">
-              <label class="flex items-center gap-2 font-bold text-violet-600 dark:text-violet-400">
-                <input type="checkbox" id="email-enable" class="rounded border-slate-300 text-violet-600 focus:ring-violet-500 w-4 h-4" />
-                <span>📧 تفعيل إرسال البريد الإلكتروني (Resend)</span>
-              </label>
-            </div>
-            
-            <div class="space-y-2">
-              <div>
-                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Resend API Key (مفتاح Resend):</label>
-                <input type="password" id="email-api-key" placeholder="مثال: re_123456789..." class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-violet-500/40 text-left font-mono" dir="ltr" />
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">البريد الإلكتروني للمستقبلين (مفصولة بفاصلة):</label>
-                <textarea id="email-recipients" rows="2" placeholder="مثال: family@example.com, friend@example.com" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-violet-500/40 text-left font-mono" dir="ltr"></textarea>
-                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">ملاحظة: سجل مجاناً في resend.com لإرسال 3000 رسالة شهرياً.</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Save Settings Button -->
-          <button id="save-settings-btn" class="w-full py-2.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold rounded-xl shadow-md transition-all text-center">
-            💾 حفظ وتفعيل الإعدادات
-          </button>
-        </div>
-      </section>
-
-      <!-- Recent Alerts and Simulation -->
-      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-sm font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase">سجل نداءات الاستغاثة الواردة</h2>
-          <button id="clear-logs-btn" class="text-xs text-red-500 hover:underline">مسح السجل</button>
-        </div>
-
-        <!-- Scrollable alert logs list -->
-        <div id="alerts-log" class="space-y-2 max-h-40 overflow-y-auto pr-1">
-          <div class="text-center text-xs text-slate-400 dark:text-slate-500 py-4">
-            لا توجد نداءات طوارئ نشطة حالياً. التطبيق في حالة استعداد تام.
-          </div>
-        </div>
-
-        <!-- Simulation Toolcard -->
-        <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">أدوات محاكاة الإشعارات الفورية:</h3>
-          <div class="grid grid-cols-2 gap-2">
-            <button id="sim-foreground-btn" class="px-3 py-2 text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-center transition-all active:scale-95">
-              🔔 محاكاة إشعار مقدمة
-            </button>
-            <button id="trigger-alarm-btn" class="px-3 py-2 text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-center transition-all active:scale-95">
-              🔊 تجربة صفارة الإنذار
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Emergency Quick Contacts -->
-      <section class="grid grid-cols-3 gap-2">
-        <a href="tel:112" class="flex flex-col items-center justify-center p-3 bg-red-500/10 hover:bg-red-500/20 rounded-2xl text-red-600 dark:text-red-400 border border-red-500/20 transition-all text-center">
-          <span class="text-xs font-bold">الإسعاف</span>
-          <span class="text-sm font-black font-mono mt-0.5">112</span>
-        </a>
-        <a href="tel:122" class="flex flex-col items-center justify-center p-3 bg-blue-500/10 hover:bg-blue-500/20 rounded-2xl text-blue-600 dark:text-blue-400 border border-blue-500/20 transition-all text-center">
-          <span class="text-xs font-bold">الشرطة</span>
-          <span class="text-sm font-black font-mono mt-0.5">122</span>
-        </a>
-        <a href="tel:180" class="flex flex-col items-center justify-center p-3 bg-amber-500/10 hover:bg-amber-500/20 rounded-2xl text-amber-600 dark:text-amber-400 border border-amber-500/20 transition-all text-center">
-          <span class="text-xs font-bold">المطافئ</span>
-          <span class="text-sm font-black font-mono mt-0.5">180</span>
-        </a>
-      </section>
+      </div>
 
     </main>
 
@@ -304,6 +604,186 @@
     <!-- Hidden Audio elements for Alarm and countdown tick -->
     <audio id="audio-alarm" loop src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" preload="auto"></audio>
     <audio id="audio-tick" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
+
+    <!-- Edit Modal Overlay for Owner -->
+    <div id="edit-overlay" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl transition-all duration-300">
+        <h2 id="edit-modal-title" class="text-sm font-black text-slate-800 dark:text-white mb-4 border-b border-slate-100 dark:border-slate-800/60 pb-2">✏️ تعديل البيانات</h2>
+        
+        <form id="edit-modal-form" class="space-y-4">
+          <input type="hidden" id="edit-type" />
+          <input type="hidden" id="edit-target-id" />
+          <input type="hidden" id="edit-sub-index" />
+          
+          <!-- Section 1: User Fields -->
+          <div id="edit-user-fields" class="space-y-3 hidden">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">الاسم الكامل:</label>
+              <input type="text" id="edit-user-name" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">اسم المستخدم:</label>
+              <input type="text" id="edit-user-username" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 font-mono" dir="ltr" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">كلمة المرور:</label>
+              <input type="text" id="edit-user-password" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 font-mono" dir="ltr" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">الدور الوظيفي:</label>
+              <select id="edit-user-role" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                <option value="عامل">عامل صيانة / تقديم الخدمة</option>
+                <option value="فني طوارئ">فني طوارئ طبي/أمني</option>
+                <option value="مراقب">مراقب عمليات الطوارئ</option>
+                <option value="المالك">المالك (المدير)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Section 2: Wing Fields -->
+          <div id="edit-wing-fields" class="space-y-3 hidden">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">اسم الجناح بالعربية:</label>
+              <input type="text" id="edit-wing-name" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
+            </div>
+          </div>
+
+          <!-- Section 3: Bed Fields -->
+          <div id="edit-bed-fields" class="space-y-3 hidden">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">رمز / رقم السرير:</label>
+              <input type="text" id="edit-bed-id" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">اسم المقيم الحالي:</label>
+              <input type="text" id="edit-bed-resident" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
+            </div>
+          </div>
+
+          <!-- Modal Action Buttons -->
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <button type="button" id="close-edit-modal" class="py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 transition-all active:scale-95">
+              إلغاء
+            </button>
+            <button type="submit" class="py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all active:scale-95">
+              حفظ التعديلات
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Login Overlay -->
+    <div id="login-overlay" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 animate-fade-in">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl transition-all duration-300">
+        <!-- Brand logo icon -->
+        <div class="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+          <svg class="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        
+        <h2 class="text-lg font-black text-center text-slate-800 dark:text-white mb-1">بوابة الاستغاثة الآمنة</h2>
+        <p class="text-xs text-center text-slate-400 dark:text-slate-500 mb-6">يرجى تسجيل الدخول للوصول إلى نظام الطوارئ SOS</p>
+        
+        <form id="login-form" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">اسم المستخدم:</label>
+            <input type="text" id="login-username" required placeholder="مثال: admin" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-red-500/40 text-left font-mono" dir="ltr" />
+          </div>
+          
+          <div>
+            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">كلمة المرور:</label>
+            <input type="password" id="login-password" required placeholder="••••••" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-red-500/40 text-left font-mono" dir="ltr" />
+          </div>
+          
+          <div id="login-error" class="hidden text-xs text-red-500 font-bold bg-red-500/10 p-3 rounded-xl border border-red-500/20 text-center">
+            اسم المستخدم أو كلمة المرور غير صحيحة!
+          </div>
+          
+          <button type="submit" id="login-submit-btn" class="w-full py-2.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-extrabold rounded-xl shadow-lg shadow-red-500/20 transition-all text-center flex items-center justify-center gap-2">
+            <span>🔓 تسجيل الدخول</span>
+          </button>
+        </form>
+        
+        <!-- Helpful credentials tips for the user/operator -->
+        <div class="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800/85">
+          <span class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 mb-2">الحسابات المتاحة للتجربة (المستخدم / المرور):</span>
+          <div class="grid grid-cols-2 gap-2 text-[9px] text-slate-500 dark:text-slate-400">
+            <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-900">
+              <span class="block font-bold text-red-600">المالك (المدير):</span>
+              <span class="block font-mono">User: admin</span>
+              <span class="block font-mono">Pass: 123</span>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-900">
+              <span class="block font-bold text-indigo-600">عامل (Worker):</span>
+              <span class="block font-mono">User: worker</span>
+              <span class="block font-mono">Pass: 123</span>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-900">
+              <span class="block font-bold text-green-600">فني طوارئ:</span>
+              <span class="block font-mono">User: tech</span>
+              <span class="block font-mono">Pass: 123</span>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-900">
+              <span class="block font-bold text-amber-600">مراقب:</span>
+              <span class="block font-mono">User: monitor</span>
+              <span class="block font-mono">Pass: 123</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Print Container Wrapper (Hidden on screen, styled via CSS print rules) -->
+    <div id="print-container-wrapper" class="hidden">
+      <div style="text-align: center; margin-bottom: 25px; border-bottom: 3px double #334155; padding-bottom: 15px;">
+        <h1 style="font-size: 22px; font-weight: 900; margin-bottom: 5px; color: #1e293b;">نظام الاستغاثة الذكي والنداء الفوري (SOS)</h1>
+        <h2 style="font-size: 16px; font-weight: 700; color: #475569; margin-bottom: 10px;">تقرير الأداء التشغيلي العام وسجل سرعة الاستجابة للنداءات المغلقة</h2>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-top: 15px; direction: rtl;">
+          <span>تاريخ إصدار التقرير: <strong id="print-date">جاري التوليد...</strong></span>
+          <span>المستلم: <strong>المالك (المدير)</strong></span>
+        </div>
+      </div>
+
+      <!-- KPI summary grid in print -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; text-align: center; direction: rtl;">
+        <div style="border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px;">
+          <span style="display: block; font-size: 10px; color: #64748b; margin-bottom: 4px;">متوسط زمن الاستجابة للمركز</span>
+          <strong id="print-avg-time" style="font-size: 14px; color: #0f172a;">-</strong>
+        </div>
+        <div style="border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px;">
+          <span style="display: block; font-size: 10px; color: #64748b; margin-bottom: 4px;">إجمالي الحالات المحلولة</span>
+          <strong id="print-total-calls" style="font-size: 14px; color: #059669;">0</strong>
+        </div>
+        <div style="border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px;">
+          <span style="display: block; font-size: 10px; color: #64748b; margin-bottom: 4px;">معدل الاستجابة القياسية الفورية</span>
+          <strong id="print-excellent-rate" style="font-size: 14px; color: #4f46e5;">0%</strong>
+        </div>
+      </div>
+
+      <div style="direction: rtl;">
+        <table style="width: 100%; border-collapse: collapse; text-align: right; font-size: 10px; border: 1px solid #cbd5e1;">
+          <thead>
+            <tr style="background-color: #f8fafc; border-bottom: 2px solid #cbd5e1;">
+              <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: right;">تاريخ البلاغ</th>
+              <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: right;">اسم المبلّغ</th>
+              <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: right;">الموقع والغرفة والسرير</th>
+              <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: right;">ملاحظات البلاغ</th>
+              <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: right;">توقيت الإغلاق</th>
+              <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: right;">المدة والتحليل التشغيلي</th>
+            </tr>
+          </thead>
+          <tbody id="print-table-body">
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 15px; font-size: 9px; text-align: center; color: #94a3b8; direction: rtl;">
+        تم إنتاج هذا المستند آلياً بواسطة لوحة تقارير نظام الاستغاثة المركزي. جميع الأوقات مأخوذة من خوادم قاعدة البيانات المركزية لضمان الدقة التشغيلية.
+      </div>
+    </div>
 
     <!-- Footer -->
     <footer class="max-w-md w-full mx-auto px-4 py-4 text-center text-[11px] text-slate-400 dark:text-slate-500">
