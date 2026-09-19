@@ -93,6 +93,10 @@ const whatsappInstanceId = document.getElementById('whatsapp-instance-id') as HT
 const whatsappToken = document.getElementById('whatsapp-token') as HTMLInputElement;
 const whatsappRecipients = document.getElementById('whatsapp-recipients') as HTMLTextAreaElement;
 
+const emailEnable = document.getElementById('email-enable') as HTMLInputElement;
+const emailApiKey = document.getElementById('email-api-key') as HTMLInputElement;
+const emailRecipients = document.getElementById('email-recipients') as HTMLTextAreaElement;
+
 const saveSettingsBtn = document.getElementById('save-settings-btn') as HTMLButtonElement;
 
 // Audio Elements
@@ -569,6 +573,10 @@ async function sendPushNotificationRequest(tokens: string[]) {
       instanceId: emergencySettings.whatsapp.instanceId,
       token: emergencySettings.whatsapp.token,
       recipients: emergencySettings.whatsapp.recipients.split(',').map(n => n.trim()).filter(Boolean)
+    } : null,
+    email: emergencySettings.email.enable ? {
+      apiKey: emergencySettings.email.apiKey,
+      recipients: emergencySettings.email.recipients.split(',').map(n => n.trim()).filter(Boolean)
     } : null
   };
 
@@ -689,6 +697,11 @@ let emergencySettings = {
     instanceId: '',
     token: '',
     recipients: ''
+  },
+  email: {
+    enable: false,
+    apiKey: '',
+    recipients: ''
   }
 };
 
@@ -726,6 +739,12 @@ async function loadEmergencySettings() {
         whatsappToken.value = data.whatsapp.token || '';
         whatsappRecipients.value = data.whatsapp.recipients || '';
       }
+      if (data.email) {
+        emergencySettings.email = data.email;
+        emailEnable.checked = data.email.enable || false;
+        emailApiKey.value = data.email.apiKey || '';
+        emailRecipients.value = data.email.recipients || '';
+      }
       console.log('Emergency channels settings loaded successfully.');
     }
   } catch (error: any) {
@@ -750,6 +769,11 @@ async function saveEmergencySettings() {
         instanceId: whatsappInstanceId.value.trim(),
         token: whatsappToken.value.trim(),
         recipients: whatsappRecipients.value.trim()
+      },
+      email: {
+        enable: emailEnable.checked,
+        apiKey: emailApiKey.value.trim(),
+        recipients: emailRecipients.value.trim()
       }
     };
 
