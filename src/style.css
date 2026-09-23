@@ -1,0 +1,159 @@
+@import "tailwindcss";
+
+/* Custom Animations for SOS Rings */
+@keyframes ping-slow {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@keyframes ping-medium {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+@keyframes ping-fast {
+  0% {
+    transform: scale(0.98);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Utility Animations */
+.animate-ping-slow {
+  animation: ping-slow 3.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.animate-ping-medium {
+  animation: ping-medium 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.animate-ping-fast {
+  animation: ping-fast 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Custom Active Styling for SOS Button */
+#sos-button:active {
+  transform: scale(0.94);
+  filter: brightness(0.9);
+}
+
+/* Custom Scrollbar styling */
+#alerts-log::-webkit-scrollbar {
+  width: 4px;
+}
+#alerts-log::-webkit-scrollbar-track {
+  background: transparent;
+}
+#alerts-log::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 9999px;
+}
+.dark #alerts-log::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.5);
+}
+
+/* Prevent text selection and user zooming context on mobile */
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Print CSS Overrides for PDF Export */
+@media print {
+  /* Hide all screen elements */
+  body > *:not(#print-container-wrapper):not(#single-case-print-wrapper) {
+    display: none !important;
+  }
+
+  /* Force display of whichever wrapper is active */
+  #print-container-wrapper, #single-case-print-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+    font-family: system-ui, -apple-system, sans-serif !important;
+    direction: rtl !important;
+  }
+
+  #print-container-wrapper.hidden, #single-case-print-wrapper.hidden {
+    display: none !important;
+  }
+
+  #print-container-wrapper:not(.hidden), #single-case-print-wrapper:not(.hidden) {
+    display: block !important;
+  }
+
+  /* Clean up tables, forces black text and visible borders during PDF saving */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    margin-top: 15px !important;
+  }
+
+  th, td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 8px !important;
+    font-size: 10px !important;
+    color: black !important;
+    background: white !important;
+    text-align: right !important;
+  }
+
+  th {
+    background-color: #f8fafc !important;
+    font-weight: bold !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Page margins */
+  @page {
+    margin: 1.5cm;
+    size: A4 portrait;
+  }
+}

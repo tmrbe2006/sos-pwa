@@ -1,0 +1,1217 @@
+<!doctype html>
+<html lang="ar" dir="rtl" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>نداء طوارئ SOS | نظام الاستغاثة الذكي</title>
+    
+    <!-- Defensive Workaround for Environment fetch Mocking/Reassignment -->
+    <script>
+      (function() {
+        try {
+          var originalFetch = window.fetch;
+          var customFetch = originalFetch;
+          Object.defineProperty(window, 'fetch', {
+            get: function() {
+              return customFetch;
+            },
+            set: function(val) {
+              customFetch = val;
+            },
+            configurable: true,
+            enumerable: true
+          });
+        } catch (e) {
+          console.warn('Defensive fetch assignment wrap bypassed:', e);
+        }
+      })();
+    </script>
+    
+    <!-- PWA Configurations -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#dc2626" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="نداء طوارئ" />
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/564/564619.png" />
+    
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300 font-sans">
+    
+    <!-- Header -->
+    <header class="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
+      <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="relative flex h-3 w-3">
+            <span id="connection-pulse" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span id="connection-dot" class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+          </div>
+          <h1 id="header-title" class="text-lg font-bold tracking-tight bg-gradient-to-r from-red-600 to-amber-500 bg-clip-text text-transparent">SOS نداء طوارئ</h1>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <!-- Install PWA button (Suppressed if running standalone) -->
+          <button id="pwa-install-btn" class="hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 active:scale-95 rounded-full transition-all shadow-md shadow-red-500/20">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            <span>تثبيت التطبيق</span>
+          </button>
+          
+          <!-- Theme Toggle -->
+          <button id="theme-toggle" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:scale-105 active:scale-95 transition-all" aria-label="تبديل المظهر">
+            <!-- Sun icon -->
+            <svg id="theme-sun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" /></svg>
+            <!-- Moon icon -->
+            <svg id="theme-moon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+          </button>
+
+          <!-- Language Toggle -->
+          <button id="lang-toggle" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:scale-105 active:scale-95 transition-all flex items-center justify-center font-black text-xs min-w-[36px] h-[36px]" aria-label="تبديل اللغة">
+            <span id="lang-toggle-text">EN</span>
+          </button>
+        </div>
+      </div>
+    </header>
+    
+    <!-- User Status Banner (Visible only when logged in) -->
+    <div id="user-status-banner" class="hidden bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
+      <div class="max-w-md mx-auto px-4 py-2 flex items-center justify-between text-xs font-semibold">
+        <div class="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+          <span id="active-user-label">المستخدم النشط:</span>
+          <span id="active-user-name" class="font-bold text-slate-800 dark:text-slate-100"></span>
+          <span id="active-user-role" class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px]"></span>
+        </div>
+        <div class="flex items-center gap-3">
+          <!-- Button to switch back to Smart TV Mode -->
+          <button id="switch-tv-btn" class="hidden text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors flex items-center gap-1 font-bold cursor-pointer">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+            <span id="switch-tv-btn-text">شاشة TV</span>
+          </button>
+
+          <button id="logout-btn" class="text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-colors flex items-center gap-1 font-bold">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            <span id="logout-btn-text">تسجيل خروج</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Area (Mobile Friendly Scrollable) -->
+    <main id="main-container" class="flex-1 max-w-md w-full mx-auto px-4 py-6 flex flex-col justify-between gap-6 overflow-x-hidden transition-all duration-300">
+      
+      <!-- Top banner / Offline alert -->
+      <div id="offline-alert" class="hidden animate-fade-in bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 p-3 rounded-2xl text-center text-sm font-medium">
+        ⚠️ أنت تعمل في وضع عدم الاتصال (Offline). سيتم تخزين بعض العمليات محلياً.
+      </div>
+
+      <!-- WORKER TERMINAL PANEL (Visible to Worker/عامل role) -->
+      <div id="worker-panel" class="space-y-6 flex flex-col flex-1 justify-between">
+        
+        <!-- Location & Resident Selection Card -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm space-y-4">
+          <h3 class="text-xs font-black text-slate-800 dark:text-white border-b border-slate-100 dark:border-slate-800/60 pb-2 flex items-center gap-1.5">
+            <span>📍</span>
+            <span id="location-resident-title">موقع الاستغاثة والمقيم:</span>
+          </h3>
+          
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label id="wing-label" class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">الجناح:</label>
+              <select id="sos-wing-select" class="w-full px-2.5 py-1.5 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/40">
+                <option value="general" id="select-general-wing">🚨 نداء عام (كامل المركز)</option>
+              </select>
+            </div>
+            <div>
+              <label id="bed-label" class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">السرير:</label>
+              <select id="sos-bed-select" class="w-full px-2.5 py-1.5 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/40" disabled>
+                <option value="none" id="select-wing-first">-- اختر الجناح أولاً --</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Selected Resident Bio -->
+          <div id="selected-resident-bio" class="hidden p-3 bg-red-500/5 rounded-2xl border border-red-500/10 flex items-center gap-3 animate-fade-in">
+            <span class="text-xl">👤</span>
+            <div>
+              <span id="resident-subtitle" class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold">المقيم في هذا السرير:</span>
+              <span id="selected-resident-name" class="text-xs font-extrabold text-red-600 dark:text-red-400">جاري التحميل...</span>
+            </div>
+          </div>
+
+          <!-- Optional Caller Notes with Voice Translation -->
+          <div class="mt-2 space-y-2">
+            <label id="additional-notes-label" class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">📝 ملاحظات إضافية مرسلة مع البلاغ (اختياري):</label>
+            
+            <div class="flex flex-col sm:flex-row gap-2">
+              <!-- Text input -->
+              <div class="relative flex-1">
+                <input type="text" id="sos-caller-notes" placeholder="مثال: سقوط أرضاً، صعوبة في التنفس، طلب كوب ماء..." class="w-full pl-10 pr-2.5 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/40" />
+                <!-- Voice Status Overlay inside input -->
+                <div id="voice-status-indicator" class="hidden absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
+                  <span class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+                  <span id="voice-status-text" class="text-[9px] font-bold text-red-600 dark:text-red-400">جاري الاستماع...</span>
+                </div>
+              </div>
+
+              <!-- Voice Controls (Dropdown and mic button) -->
+              <div class="flex items-center gap-1.5 shrink-0 self-stretch sm:self-auto">
+                <!-- Language Selector Dropdown -->
+                <select id="voice-lang-select" class="flex-1 sm:flex-initial px-2.5 py-2 text-[11px] font-black rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/40 cursor-pointer" title="لغة العامل">
+                  <option value="ar-SA" selected>🇸🇦 العربية</option>
+                  <option value="ur-PK">🇵🇰 Urdu (الأوردو)</option>
+                  <option value="en-US">🇺🇸 English (الإنجليزية)</option>
+                  <option value="hi-IN">🇮🇳 Hindi (الهندية)</option>
+                  <option value="bn-BD">🇧🇩 Bengali (البنغالية)</option>
+                  <option value="fil-PH">🇵🇭 Tagalog (الفلبينية)</option>
+                  <option value="ml-IN">🇮🇳 Malayalam (المليبارية)</option>
+                </select>
+
+                <!-- Voice Recording Toggle Button -->
+                <button type="button" id="voice-record-btn" class="p-2 rounded-xl bg-red-600/10 hover:bg-red-600/20 text-red-600 dark:text-red-400 border border-red-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center cursor-pointer shrink-0" title="اضغط للتحدث وسجل ملاحظتك بصوتك">
+                  <svg id="mic-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                  <svg id="mic-active-icon" class="w-5 h-5 hidden text-red-600 animate-pulse" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Speech translation and status notification banner -->
+            <div id="translation-status-banner" class="hidden text-[10px] px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between animate-fade-in gap-2">
+              <div class="flex items-center gap-2">
+                <span id="translation-spinner" class="hidden w-3.5 h-3.5 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></span>
+                <span id="translation-status-text" class="font-bold text-slate-600 dark:text-slate-400"></span>
+              </div>
+              <button type="button" id="cancel-translation-btn" class="hidden text-red-600 hover:text-red-700 dark:hover:text-red-400 font-extrabold cursor-pointer">إلغاء</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Emergency Trigger Section -->
+        <section class="flex flex-col items-center justify-center my-auto py-4">
+          
+          <!-- Grid of Two Premium Circular Controls -->
+          <div class="grid grid-cols-2 gap-4 w-full max-w-sm justify-items-center mb-6">
+            
+            <!-- 1. SOS Button Station -->
+            <div class="relative flex items-center justify-center w-40 h-40">
+              <!-- Pulse rings -->
+              <div class="absolute inset-0 rounded-full bg-red-500/10 dark:bg-red-500/5 animate-ping-slow"></div>
+              <div class="absolute inset-2 rounded-full bg-red-500/15 dark:bg-red-500/10 animate-ping-medium"></div>
+              
+              <!-- Outer border -->
+              <div class="absolute inset-4 rounded-full border-2 border-dashed border-red-500/30 dark:border-red-500/20 animate-spin-slow"></div>
+
+              <!-- Main SOS Button -->
+              <button id="sos-button" class="relative z-10 w-28 h-28 rounded-full bg-gradient-to-br from-red-500 to-rose-700 text-white font-extrabold text-2xl shadow-[0_0_30px_rgba(220,38,38,0.4)] active:shadow-[0_0_15px_rgba(220,38,38,0.2)] border-4 border-white dark:border-slate-900 select-none cursor-pointer flex flex-col items-center justify-center gap-0.5 transition-all duration-150">
+                <span class="tracking-widest">SOS</span>
+                <span id="sos-btn-text" class="text-[9px] font-semibold opacity-95 tracking-normal">إرسال استغاثة</span>
+              </button>
+              
+              <!-- Radial Countdown Circular Overlay -->
+              <div id="countdown-overlay" class="absolute inset-4 rounded-full bg-slate-950/90 text-white flex flex-col items-center justify-center gap-0.5 opacity-0 pointer-events-none scale-90 transition-all duration-200 hidden z-20">
+                <span id="countdown-number" class="text-3xl font-black text-red-500">3</span>
+                <span id="countdown-cancel-text" class="text-[7px] text-slate-300 font-medium">إلغاء الأمر</span>
+              </div>
+            </div>
+
+            <!-- 2. Supervisor Call Station -->
+            <div class="relative flex items-center justify-center w-40 h-40">
+              <!-- Pulse rings -->
+              <div class="absolute inset-0 rounded-full bg-indigo-500/10 dark:bg-indigo-500/5 animate-ping-slow"></div>
+              <div class="absolute inset-2 rounded-full bg-indigo-500/15 dark:bg-indigo-500/10 animate-ping-medium"></div>
+              
+              <!-- Outer border -->
+              <div class="absolute inset-4 rounded-full border-2 border-dashed border-indigo-500/30 dark:border-indigo-500/20 animate-spin-slow"></div>
+
+              <!-- Main Supervisor Button (styled exactly like SOS but Indigo) -->
+              <button id="supervisor-button" class="relative z-10 w-28 h-28 rounded-full bg-gradient-to-br from-indigo-600 to-blue-700 text-white font-extrabold text-xs shadow-[0_0_30px_rgba(79,70,229,0.4)] active:shadow-[0_0_15px_rgba(79,70,229,0.2)] border-4 border-white dark:border-slate-900 select-none cursor-pointer flex flex-col items-center justify-center gap-1 transition-all duration-150">
+                <span class="text-xl">👤</span>
+                <span id="supervisor-btn-text" class="text-[9px] font-black tracking-normal">استدعاء مشرف</span>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Hint Text -->
+          <div class="text-center max-w-xs mb-4">
+            <p class="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1" id="sos-hint-text">
+              اضغط على زر SOS لتشغيل صفارة الإنذار، أو زر المشرف لإرسال استدعاء للمراقبين فقط.
+            </p>
+            <p class="text-xs text-red-500 font-medium hidden" id="countdown-hint">
+              جاري تحضير النداء... اضغط مجدداً في أي مكان للإلغاء!
+            </p>
+          </div>
+        </section>
+
+        <!-- Emergency Quick Contacts - Saudi Unified Emergency 911 -->
+        <section class="w-full max-w-sm px-4">
+          <a href="tel:911" class="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-2xl shadow-md shadow-emerald-500/10 border border-emerald-500/20 transition-all text-right group active:scale-95 cursor-pointer">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-xl">
+                🇸🇦
+              </div>
+              <div>
+                <span id="ksa-emergency-title" class="block text-xs font-black">رقم الطوارئ الموحد بالمملكة</span>
+                <span id="ksa-emergency-sub" class="block text-[9px] text-emerald-100 font-bold">الدفاع المدني، الشرطة، والمرور</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="text-xl font-black font-mono">911</span>
+              <span class="text-xs opacity-80 group-hover:translate-x-[-2px] transition-transform">📞</span>
+            </div>
+          </a>
+        </section>
+      </div>
+
+      <!-- MONITORING TERMINAL PANEL (Visible to Monitor/Tech/Admin roles) -->
+      <div id="monitor-panel" class="hidden space-y-6 flex flex-col flex-1">
+        
+        <!-- Premium Live Telemetry Metrics Row -->
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <!-- System Status Card -->
+          <div class="bg-gradient-to-br from-slate-50 to-white dark:from-slate-900/40 dark:to-slate-950/40 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center gap-3.5 shadow-sm transition-all duration-300">
+            <div id="system-status-indicator" class="w-11 h-11 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl shrink-0">
+              🛡️
+            </div>
+            <div>
+              <span id="system-status-label" class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">حالة النظام</span>
+              <span id="system-status-text" class="text-sm font-black text-emerald-600 dark:text-emerald-400">آمن ومستقر</span>
+            </div>
+          </div>
+
+          <!-- Active Cases Count Card -->
+          <div class="bg-gradient-to-br from-slate-50 to-white dark:from-slate-900/40 dark:to-slate-950/40 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center gap-3.5 shadow-sm transition-all duration-300">
+            <div id="active-cases-indicator" class="w-11 h-11 rounded-2xl bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center text-xl shrink-0 animate-pulse">
+              🚨
+            </div>
+            <div>
+              <span id="active-cases-label" class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">الحالات النشطة</span>
+              <span id="monitoring-active-count" class="text-sm font-black text-red-600">0 بلاغ</span>
+            </div>
+          </div>
+
+          <!-- Total Connected Devices Card -->
+          <div class="col-span-2 md:col-span-1 bg-gradient-to-br from-slate-50 to-white dark:from-slate-900/40 dark:to-slate-950/40 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center gap-3.5 shadow-sm transition-all duration-300">
+            <div class="w-11 h-11 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl shrink-0">
+              📱
+            </div>
+            <div>
+              <span id="connected-devices-label" class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">الأجهزة المتصلة</span>
+              <span id="monitoring-devices-count" class="text-sm font-black text-indigo-600 dark:text-indigo-400">0 جهاز</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 Column command bento grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+          
+          <!-- Column 1 & 2 (Span 2) - Active Calls Monitor View -->
+          <div class="md:col-span-2 space-y-6">
+            <!-- Google Maps Live Tracker Screen -->
+            <section id="map-tracker-dashboard" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm transition-all duration-300">
+              <div class="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                <div class="flex items-center gap-2">
+                  <span class="text-xl">🗺️</span>
+                  <h2 id="map-monitor-title" class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider" data-ar="🗺️ خريطة الرصد وتتبع المتصلين الفورية" data-en="🗺️ Live Caller Tracking Map (GPS & Token)">🗺️ خريطة الرصد وتتبع المتصلين الفورية</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button id="btn-recenter-map" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-all flex items-center gap-1 cursor-pointer" data-ar="🎯 إعادة التركيز على الخريطة" data-en="🎯 Recenter Map">🎯 إعادة التركيز على الخريطة</button>
+                  <span id="map-status-badge" class="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-indigo-500/10 text-indigo-600" data-ar="مزامنة GPS نشطة" data-en="GPS Sync Active">مزامنة GPS نشطة</span>
+                </div>
+              </div>
+              
+              <!-- Map Canvas -->
+              <div id="map-canvas" class="w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner" style="height: 380px; min-height: 380px;"></div>
+            </section>
+
+            <!-- Central Command Screen -->
+            <section id="active-alerts-dashboard" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm transition-all duration-300">
+              <div class="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                <div class="flex items-center gap-2">
+                  <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+                  </span>
+                  <h2 id="live-monitor-title" class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">شاشة المتابعة ورصد الاستغاثات الحية</h2>
+                </div>
+                <span id="active-alerts-count" class="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-red-500/10 text-red-600">0 بلاغ نشط</span>
+              </div>
+              
+              <!-- Active Alerts Dynamic Container -->
+              <div id="active-alerts-container" class="space-y-4 min-h-[250px] max-h-[500px] overflow-y-auto pr-1">
+                <!-- Loaded Dynamically via JS -->
+                <div id="active-alerts-empty-text" class="text-center text-xs text-slate-400 py-12">
+                  لا توجد بلاغات نشطة حالياً. جميع الأنظمة مستقرة.
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Column 3 (Span 1) - Control Panels & Logs -->
+          <div class="space-y-6">
+            
+            <!-- Connection & Device Status Dashboard -->
+            <section id="connection-status-section" class="hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300">
+              <h2 id="connection-token-title" class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 tracking-wider uppercase">حالة الاتصال والـ Token</h2>
+              
+              <div class="space-y-3.5 text-sm">
+                <!-- Notification Permission Row -->
+                <div class="flex items-center justify-between">
+                  <span id="notification-permission-label" class="text-xs text-slate-600 dark:text-slate-300">صلاحية الإشعارات:</span>
+                  <span id="permission-badge" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">جاري التحقق</span>
+                </div>
+
+                <!-- Token Status Row -->
+                <div class="flex items-center justify-between gap-4">
+                  <span id="device-id-label" class="text-xs text-slate-600 dark:text-slate-300 shrink-0">معرّف الجهاز (FCM):</span>
+                  <div class="flex items-center gap-1.5 overflow-hidden">
+                    <span id="token-status" class="truncate text-[10px] font-mono text-slate-400 dark:text-slate-500 max-w-[100px]">جاري الجلب...</span>
+                    <button id="copy-token-btn" class="p-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" title="نسخ المعرف">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Registered Devices Count -->
+                <div class="flex items-center justify-between">
+                  <span id="registered-devices-label" class="text-xs text-slate-600 dark:text-slate-300">الأجهزة المسجلة:</span>
+                  <span id="devices-count" class="px-2 py-0.5 text-[10px] font-bold rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">0</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- Collapsible Telegram & WhatsApp SOS Settings -->
+            <section id="sos-channels-settings-section" class="hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300">
+              <button id="toggle-settings-btn" class="w-full flex items-center justify-between font-bold text-xs text-slate-700 dark:text-slate-300 tracking-wide uppercase text-right select-none">
+                <span class="flex items-center gap-1.5">
+                  <span id="channel-settings-title">⚙️ إعدادات القنوات</span>
+                </span>
+                <svg id="settings-chevron" class="w-4 h-4 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" /></svg>
+              </button>
+
+              <div id="settings-panel-container" class="hidden mt-4 space-y-4 border-t border-slate-100 dark:border-slate-800 pt-4 animate-fade-in text-sm">
+                <!-- Telegram Settings -->
+                <div class="space-y-3 bg-blue-500/5 p-4 rounded-2xl border border-blue-500/10">
+                  <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2 font-bold text-blue-600 dark:text-blue-400 text-xs">
+                      <input type="checkbox" id="telegram-enable" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4" />
+                      <span>✈️ تيليجرام (Telegram)</span>
+                    </label>
+                  </div>
+                  
+                  <div class="space-y-2">
+                    <div>
+                      <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Bot Token:</label>
+                      <input type="password" id="telegram-bot-token" placeholder="Bot Token" class="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-left font-mono" dir="ltr" />
+                    </div>
+                    <div>
+                      <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Chat ID:</label>
+                      <input type="text" id="telegram-chat-id" placeholder="Chat ID" class="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-left font-mono" dir="ltr" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- WhatsApp Settings -->
+                <div class="space-y-3 bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10">
+                  <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2 font-bold text-emerald-600 dark:text-emerald-400 text-xs">
+                      <input type="checkbox" id="whatsapp-enable" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4" />
+                      <span id="whatsapp-enable-label">💬 واتساب (UltraMsg)</span>
+                    </label>
+                  </div>
+                  
+                  <div class="space-y-2">
+                    <div>
+                      <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Instance ID:</label>
+                      <input type="text" id="whatsapp-instance-id" placeholder="Instance ID" class="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 text-left font-mono" dir="ltr" />
+                    </div>
+                    <div>
+                      <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Token:</label>
+                      <input type="password" id="whatsapp-token" placeholder="Token" class="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 text-left font-mono" dir="ltr" />
+                    </div>
+                    <div>
+                      <label id="whatsapp-recipients-label" class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">أرقام هواتف المستلمين:</label>
+                      <textarea id="whatsapp-recipients" rows="2" placeholder="أرقام هواتف المستلمين" class="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 text-left font-mono" dir="ltr"></textarea>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Email Settings -->
+                <div class="space-y-3 bg-violet-500/5 p-4 rounded-2xl border border-violet-500/10">
+                  <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2 font-bold text-violet-600 dark:text-violet-400 text-xs">
+                      <input type="checkbox" id="email-enable" class="rounded border-slate-300 text-violet-600 focus:ring-violet-500 w-4 h-4" />
+                      <span id="email-enable-label">📧 بريد SOS (Email)</span>
+                    </label>
+                  </div>
+                  
+                  <div class="space-y-2">
+                    <div>
+                      <label id="email-service-label" class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">طريقة الإرسال:</label>
+                      <select id="email-service-type" class="w-full px-2 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+                        <option value="gmail">📨 إيميل شخصي (Apps Script)</option>
+                        <option value="resend">🏢 دومين تجاري (Resend)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label id="email-credential-label" class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">الرابط / المفتاح الخاص:</label>
+                      <input type="password" id="email-api-key" placeholder="الرابط / المفتاح" class="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-violet-500/40 text-left font-mono" dir="ltr" />
+                    </div>
+                    <div id="email-sender-container" class="hidden">
+                      <label id="email-sender-label" class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">بريد المرسل المعتمد:</label>
+                      <input type="email" id="email-sender" placeholder="Sender Email" class="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-violet-500/40 text-left font-mono" dir="ltr" />
+                    </div>
+                    <div>
+                      <label id="email-recipients-label" class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">المستقبلين:</label>
+                      <textarea id="email-recipients" rows="2" placeholder="المستقبلين" class="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-violet-500/40 text-left font-mono" dir="ltr"></textarea>
+                      <p id="email-hint-text" class="text-[10px] text-slate-400 dark:text-slate-500 mt-1"></p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Save Settings Button -->
+                <button id="save-settings-btn" class="w-full py-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold rounded-xl text-xs transition-all">
+                  💾 حفظ وتفعيل الإعدادات
+                </button>
+              </div>
+            </section>
+
+            <!-- User Management Section (Visible to Admin/المالك) -->
+            <section id="user-management-section" class="hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300">
+              <h2 id="user-management-title" class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 tracking-wider uppercase">👥 إدارة المستخدمين (المالك)</h2>
+              
+              <!-- Add New User Form -->
+              <form id="add-user-form" class="space-y-3 bg-indigo-500/5 p-4 rounded-2xl border border-indigo-500/10 mb-4">
+                <h3 id="add-user-title" class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">➕ إضافة مستخدم جديد</h3>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label id="full-name-label" class="block text-[9px] font-semibold text-slate-500 mb-0.5">الاسم الكامل:</label>
+                    <input type="text" id="new-user-name" required placeholder="أحمد علي" class="w-full px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label id="username-label" class="block text-[9px] font-semibold text-slate-500 mb-0.5">اسم المستخدم:</label>
+                    <input type="text" id="new-user-username" required placeholder="ahmed" class="w-full px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none text-left font-mono" dir="ltr" />
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label id="password-label" class="block text-[9px] font-semibold text-slate-500 mb-0.5">كلمة المرور:</label>
+                    <input type="password" id="new-user-password" required placeholder="••••" class="w-full px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none text-left font-mono" dir="ltr" />
+                  </div>
+                  <div>
+                    <label id="role-label" class="block text-[9px] font-semibold text-slate-500 mb-0.5">نوع المستخدم:</label>
+                    <select id="new-user-role" class="w-full px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none">
+                      <option value="عامل">عامل</option>
+                      <option value="الطوارئ">الطوارئ</option>
+                      <option value="مراقب">مراقب</option>
+                      <option value="المالك">المالك</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" id="add-user-btn-text" class="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] rounded shadow-sm transition-all">
+                  ✨ إضافة المستخدم
+                </button>
+              </form>
+
+              <!-- Current Registered Users List -->
+              <div>
+                <h3 id="registered-users-label" class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1.5">📋 المستخدمين المسجلين حالياً:</h3>
+                <div id="users-list-container" class="space-y-2 max-h-36 overflow-y-auto pr-1">
+                  <!-- Loaded via JS -->
+                </div>
+              </div>
+            </section>
+
+            <!-- Wing & Bed Management Section (Visible to Admin/المالك) -->
+            <section id="wing-management-section" class="hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300 space-y-5">
+              <h2 id="wing-management-title" class="text-xs font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase">🏢 إدارة الأجنحة والأسرة والمقيمين (المالك)</h2>
+              
+              <!-- 1. Add Wing Form -->
+              <form id="add-wing-form" class="space-y-3 bg-red-500/5 p-4 rounded-2xl border border-red-500/10">
+                <h3 id="add-wing-title" class="text-[10px] font-bold text-red-600 dark:text-red-400">➕ إضافة جناح جديد</h3>
+                <div>
+                  <label id="wing-name-label" class="block text-[9px] font-semibold text-slate-500 mb-0.5">اسم الجناح بالعربية:</label>
+                  <input type="text" id="new-wing-name" required placeholder="جناح الياسمين - الطابق الثاني" class="w-full px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none" />
+                </div>
+                <button type="submit" id="add-wing-btn-text" class="w-full py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] rounded shadow-sm transition-all">
+                  ✨ إضافة جناح جديد
+                </button>
+              </form>
+
+              <!-- 2. Add Bed Form -->
+              <form id="add-bed-form" class="space-y-3 bg-indigo-500/5 p-4 rounded-2xl border border-indigo-500/10">
+                <h3 id="add-bed-title" class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">🛏️ إضافة سرير ومقيم إلى جناح</h3>
+                <div>
+                  <label id="select-wing-label" class="block text-[9px] font-semibold text-slate-500 mb-0.5">اختر الجناح:</label>
+                  <select id="bed-wing-select" class="w-full px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none">
+                    <!-- Populated via JS -->
+                  </select>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label id="bed-id-label" class="block text-[9px] font-semibold text-slate-500 mb-0.5">رمز / رقم السرير:</label>
+                    <input type="text" id="new-bed-id" required placeholder="سرير ١٠٤" class="w-full px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label id="resident-name-label" class="block text-[9px] font-semibold text-slate-500 mb-0.5">اسم المقيم الحالي:</label>
+                    <input type="text" id="new-resident-name" required placeholder="العم عبدالرحمن" class="w-full px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:outline-none" />
+                  </div>
+                </div>
+                <button type="submit" id="add-bed-btn-text" class="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] rounded shadow-sm transition-all">
+                  ✨ إضافة السرير والمقيم
+                </button>
+              </form>
+
+              <!-- 3. Current Registry view -->
+              <div>
+                <h3 id="current-registry-title" class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1.5">📋 سجل الأجنحة والغرف والأسرة:</h3>
+                <div id="wings-registry-container" class="space-y-3 max-h-56 overflow-y-auto pr-1">
+                  <!-- Loaded via JS -->
+                </div>
+              </div>
+            </section>
+
+            <!-- Analytical Reports Section (Redesigned as an Elegant Dashboard) -->
+            <section id="reports-section" class="hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm transition-all duration-300 space-y-6">
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-4">
+                <div class="flex items-center gap-3">
+                  <div class="p-2.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-2xl text-xl font-bold">
+                    📊
+                  </div>
+                  <div>
+                    <h2 id="reports-title" class="text-sm font-black text-slate-800 dark:text-white">لوحة التحكم والتحليل الذكي للأداء</h2>
+                    <p id="reports-subtitle" class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">مراقبة جودة الخدمة واستجابة الأطقم الطبية للنداءات</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <button id="print-report-tv-btn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[10px] rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 active:scale-95 shrink-0">
+                    <span id="report-preview-btn-text">👁️ معاينة وطباعة مستقلة</span>
+                  </button>
+                  <button id="print-report-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[10px] rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 active:scale-95 shrink-0">
+                    <span id="report-print-btn-text">🖨️ طباعة التقرير الكلي المعتمد</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Key Metrics / KPIs with visual meter -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-gradient-to-br from-indigo-50/50 to-white dark:from-slate-950 dark:to-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/60 relative overflow-hidden group">
+                  <span id="avg-response-label" class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold mb-1">⏱️ متوسط زمن الاستجابة</span>
+                  <span id="avg-response-time-kpi" class="text-xl font-black text-slate-800 dark:text-white font-mono">-</span>
+                  <div class="h-1 w-full bg-slate-100 dark:bg-slate-800 mt-3 rounded-full overflow-hidden">
+                    <div class="h-full bg-indigo-500 rounded-full" style="width: 70%"></div>
+                  </div>
+                </div>
+                <div class="bg-gradient-to-br from-emerald-50/50 to-white dark:from-slate-950 dark:to-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/60 relative overflow-hidden group">
+                  <span id="resolved-cases-label" class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold mb-1">✅ الحالات المحلولة والمؤرشفة</span>
+                  <span id="resolved-calls-count-kpi" class="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">0</span>
+                  <div class="h-1 w-full bg-slate-100 dark:bg-slate-800 mt-3 rounded-full overflow-hidden">
+                    <div class="h-full bg-emerald-500 rounded-full" style="width: 100%"></div>
+                  </div>
+                </div>
+                <div class="bg-gradient-to-br from-amber-50/50 to-white dark:from-slate-950 dark:to-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/60 relative overflow-hidden group">
+                  <span id="excellent-rate-label" class="block text-[10px] text-slate-400 dark:text-slate-500 font-bold mb-1">⚡ كفاءة الاستجابة الفائقة (&lt; ٣ د)</span>
+                  <span id="excellent-rate-kpi" class="text-xl font-black text-amber-600 dark:text-amber-500 font-mono">0%</span>
+                  <div class="h-1 w-full bg-slate-100 dark:bg-slate-800 mt-3 rounded-full overflow-hidden">
+                    <div id="excellent-bar" class="h-full bg-amber-500 rounded-full" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Filter & Search Controls -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/60">
+                <div class="flex flex-col gap-1">
+                  <label id="search-smart-label" class="text-[9px] font-bold text-slate-400">🔍 بحث ذكي بالاسم أو الملاحظات:</label>
+                  <input type="text" id="report-search" placeholder="اكتب اسم المقيم، الجناح، أو ملاحظات البلاغ..." class="w-full px-3 py-1.5 text-[10px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label id="filter-speed-label" class="text-[9px] font-bold text-slate-400">🎯 تصفية حسب سرعة الاستجابة:</label>
+                  <select id="report-filter-speed" class="w-full px-3 py-1.5 text-[10px] font-extrabold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none">
+                    <option value="all" id="filter-speed-all">كل المستويات والأزمنة</option>
+                    <option value="excellent" id="filter-speed-excellent">استجابة فائقة السرعة (&lt; ٣ د) ⚡</option>
+                    <option value="standard" id="filter-speed-standard">استجابة قياسية طبيعية (٣ - ٧ د) 🟢</option>
+                    <option value="delayed" id="filter-speed-delayed">استجابة متأخرة وبطيئة (> ٧ د) ⚠️</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Printable Report Document Container -->
+              <div class="overflow-x-auto border border-slate-100 dark:border-slate-800/60 rounded-2xl">
+                <table class="w-full text-right text-[10px] border-collapse min-w-[750px]">
+                  <thead id="reports-table-header">
+                    <tr class="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-400 font-extrabold border-b border-slate-100 dark:border-slate-800/80">
+                      <th class="p-3" data-ar="تاريخ ووقت البلاغ" data-en="Alert Date & Time">تاريخ ووقت البلاغ</th>
+                      <th class="p-3" data-ar="اسم المسعف / المغلق" data-en="Staff / Closed By">اسم المسعف / المغلق</th>
+                      <th class="p-3" data-ar="موقع الغرفة / السرير" data-en="Room / Bed Location">موقع الغرفة / السرير</th>
+                      <th class="p-3" data-ar="التفاصيل والملاحظات" data-en="Details & Notes">التفاصيل والملاحظات</th>
+                      <th class="p-3" data-ar="زمن الاستجابة للنداء" data-en="Response Time">زمن الاستجابة للنداء</th>
+                      <th class="p-3 text-center" data-ar="التقرير والإجراءات" data-en="Report & Actions">التقرير والإجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody id="report-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                    <!-- Loaded dynamically via JS -->
+                    <tr>
+                      <td colspan="6" id="syncing-data-text" class="p-6 text-center text-slate-400 dark:text-slate-500 font-medium">جاري مزامنة وتحميل بيانات الأداء من السحابة...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <!-- Recent Alerts Logs section (Archive) -->
+            <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 shadow-sm transition-all duration-300">
+              <div class="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800/80 pb-2">
+                <h2 id="total-archive-title" class="text-xs font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase">📜 أرشيف الاتصالات الكلي</h2>
+                <button id="clear-logs-btn" class="text-[10px] text-red-500 hover:underline">مسح السجل</button>
+              </div>
+
+              <!-- Scrollable alert logs list -->
+              <div id="alerts-log" class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                <div id="no-alerts-placeholder" class="text-center text-xs text-slate-400 dark:text-slate-500 py-4">
+                  لا توجد نداءات طوارئ حالياً.
+                </div>
+              </div>
+
+              <!-- Simulation Toolcard -->
+              <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <h3 id="simulation-tools-title" class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2">أدوات محاكاة الإشعارات والصفارة:</h3>
+                <div class="grid grid-cols-2 gap-2">
+                  <button id="sim-foreground-btn" class="px-2.5 py-1.5 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-center transition-all">
+                    <span id="sim-foreground-btn-text">🔔 محاكاة إشعار</span>
+                  </button>
+                  <button id="trigger-alarm-btn" class="px-2.5 py-1.5 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-center transition-all">
+                    <span id="trigger-alarm-btn-text">🔊 تجربة الصفارة</span>
+                  </button>
+                </div>
+              </div>
+            </section>
+
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- iOS Install Guide Modal Drawer -->
+    <div id="ios-install-modal" class="fixed inset-0 z-50 bg-slate-950/60 flex items-end justify-center p-4 transition-all duration-300 opacity-0 pointer-events-none hidden">
+      <div class="bg-white dark:bg-slate-900 rounded-t-3xl p-6 w-full max-w-md shadow-2xl transition-all duration-300 translate-y-full">
+        <div class="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-4"></div>
+        <h3 id="ios-install-title" class="text-lg font-bold text-slate-900 dark:text-white mb-2 text-center">تثبيت التطبيق على أجهزة iPhone / iPad</h3>
+        <p id="ios-install-desc" class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4 text-center">
+          لتحصل على كامل مميزات تطبيق الاستغاثة وتلقي الإشعارات حتى عندما يكون مغلقاً، يرجى تثبيته على شاشتك الرئيسية:
+        </p>
+        <div class="space-y-3 bg-slate-50 dark:bg-slate-850 p-4 rounded-2xl text-sm text-slate-700 dark:text-slate-200">
+          <div class="flex gap-2.5 items-start">
+            <span class="flex items-center justify-center w-5 h-5 rounded-full bg-red-600 text-white text-xs font-bold shrink-0">١</span>
+            <span id="ios-install-step-1">اضغط على زر <strong>مشاركة (Share)</strong> في شريط متصفح Safari بالأسفل.</span>
+          </div>
+          <div class="flex gap-2.5 items-start">
+            <span class="flex items-center justify-center w-5 h-5 rounded-full bg-red-600 text-white text-xs font-bold shrink-0">٢</span>
+            <span id="ios-install-step-2">قم بالتمرير للأسفل ثم اضغط على <strong>إضافة للشاشة الرئيسية (Add to Home Screen)</strong>.</span>
+          </div>
+        </div>
+        <button id="close-ios-modal" class="mt-5 w-full py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 transition-all active:scale-95">
+          موافق، تم الفهم
+        </button>
+      </div>
+    </div>
+
+    <!-- Hidden Audio elements for Alarm and countdown tick -->
+    <audio id="audio-alarm" loop src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" preload="auto"></audio>
+    <audio id="audio-tick" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
+
+    <!-- Edit Modal Overlay for Owner -->
+    <div id="edit-overlay" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl transition-all duration-300">
+        <h2 id="edit-modal-title" class="text-sm font-black text-slate-800 dark:text-white mb-4 border-b border-slate-100 dark:border-slate-800/60 pb-2">✏️ تعديل البيانات</h2>
+        
+        <form id="edit-modal-form" class="space-y-4">
+          <input type="hidden" id="edit-type" />
+          <input type="hidden" id="edit-target-id" />
+          <input type="hidden" id="edit-sub-index" />
+          
+          <!-- Section 1: User Fields -->
+          <div id="edit-user-fields" class="space-y-3 hidden">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">الاسم الكامل:</label>
+              <input type="text" id="edit-user-name" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">اسم المستخدم:</label>
+              <input type="text" id="edit-user-username" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 font-mono" dir="ltr" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">كلمة المرور:</label>
+              <input type="text" id="edit-user-password" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 font-mono" dir="ltr" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">الدور الوظيفي:</label>
+              <select id="edit-user-role" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                <option value="عامل">عامل صيانة / تقديم الخدمة</option>
+                <option value="الطوارئ">الطوارئ طبي/أمني</option>
+                <option value="مراقب">مراقب عمليات الطوارئ</option>
+                <option value="المالك">المالك (المدير)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Section 2: Wing Fields -->
+          <div id="edit-wing-fields" class="space-y-3 hidden">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">اسم الجناح بالعربية:</label>
+              <input type="text" id="edit-wing-name" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
+            </div>
+          </div>
+
+          <!-- Section 3: Bed Fields -->
+          <div id="edit-bed-fields" class="space-y-3 hidden">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">رمز / رقم السرير:</label>
+              <input type="text" id="edit-bed-id" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">اسم المقيم الحالي:</label>
+              <input type="text" id="edit-bed-resident" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
+            </div>
+          </div>
+
+          <!-- Modal Action Buttons -->
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <button type="button" id="close-edit-modal" class="py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 transition-all active:scale-95">
+              إلغاء
+            </button>
+            <button type="submit" id="edit-modal-save-btn" class="py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all active:scale-95">
+              حفظ التعديلات
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Resolution Note Modal Overlay -->
+    <div id="resolve-modal-overlay" class="fixed inset-0 z-[60] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden" dir="rtl">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl transition-all duration-300 text-right">
+        
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-3 mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">✅</span>
+            <h2 id="resolve-modal-title" class="text-sm font-black text-slate-800 dark:text-white">إغلاق وتأكيد حل البلاغ</h2>
+          </div>
+          <button type="button" id="resolve-modal-close" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-850">
+            ❌
+          </button>
+        </div>
+
+        <form id="resolve-modal-form" class="space-y-4">
+          <input type="hidden" id="resolve-target-id" />
+          
+          <div>
+            <label id="resolve-modal-notes-label" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">كيفية الحل وإجراءات المعالجة المتخذة:</label>
+            <textarea id="resolve-notes-input" required rows="4" placeholder="مثال: تم التوجه للغرفة فوراً ومساعدة المقيم، وتبين أن المشكلة بسيطة وتم حلها بنجاح مع الاطمئنان على علاماته الحيوية." class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 resize-none leading-relaxed" minlength="5" maxlength="1000"></textarea>
+          </div>
+
+          <!-- Modal Action Buttons -->
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <button type="button" id="resolve-modal-cancel-btn" class="py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 transition-all active:scale-95">
+              إلغاء
+            </button>
+            <button type="submit" id="resolve-modal-confirm-btn" class="py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all active:scale-95">
+              تأكيد وإغلاق البلاغ
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Custom Confirmation Modal Overlay (Fixes browser iframe blocks) -->
+    <div id="confirm-modal-overlay" class="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl transition-all duration-300 text-center">
+        <div id="confirm-modal-icon" class="w-12 h-12 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 flex items-center justify-center text-xl mx-auto mb-4">
+          ⚠️
+        </div>
+        <h3 id="confirm-modal-title" class="text-sm font-black text-slate-800 dark:text-white mb-2">تأكيد الإجراء</h3>
+        <p id="confirm-modal-message" class="text-xs text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">هل أنت متأكد من رغبتك في حذف هذا العنصر؟ لا يمكن التراجع عن هذا الإجراء.</p>
+        
+        <div class="grid grid-cols-2 gap-3">
+          <button type="button" id="confirm-modal-cancel-btn" class="py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 transition-all active:scale-95">
+            إلغاء
+          </button>
+          <button type="button" id="confirm-modal-confirm-btn" class="py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all active:scale-95">
+            تأكيد الحذف
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Print Preview Modal Overlay (Bypasses browser iframe print blockage) -->
+    <div id="print-preview-overlay" class="fixed inset-0 z-[100] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden" dir="rtl">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 w-full max-w-2xl shadow-2xl transition-all duration-300 flex flex-col max-h-[90vh]">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🖨️</span>
+            <h3 id="print-preview-title" class="text-sm font-black text-slate-800 dark:text-white">معاينة المستند والتقرير الجاهز للطباعة</h3>
+          </div>
+          <button type="button" id="close-print-preview" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1 rounded-lg">
+            ❌
+          </button>
+        </div>
+
+        <!-- Warning Info for sandboxed iframe -->
+        <div id="print-preview-warning" class="bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-400 p-3 rounded-2xl text-[10px] leading-relaxed mb-4 flex items-start gap-2 text-right">
+          <span class="text-xs">⚠️</span>
+          <div>
+            <strong>تنبيه الأمان لبيئة المعاينة:</strong> المتصفحات تمنع نوافذ الطباعة التلقائية داخل الأطر المؤطرة (iFrame) لحمايتك. لقد جهزنا لك التقرير بالأسفل بالكامل! يمكنك نسخه، أو لطباعته ورقيّاً كملف PDF يرجى الضغط على زر "فتح في نافذة مستقلة" الموجود في الركن العلوي الأيمن من شاشة AI Studio للطباعة المباشرة.
+          </div>
+        </div>
+
+        <!-- Scrollable Printable Report Container (Simulated A4 Paper Sheet Preview) -->
+        <div class="overflow-y-auto flex-1 bg-slate-100 dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 mb-4 flex justify-center" dir="rtl">
+          <div class="w-full max-w-[21cm] min-h-[29.7cm] bg-white text-black p-8 shadow-md border border-slate-300 rounded-lg relative font-sans text-xs text-right select-none" style="box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+            
+            <!-- Simulated A4 Paper Header Badge (Non-printable guide) -->
+            <div class="absolute top-2 left-2 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-400 text-[8px] px-2 py-0.5 rounded font-bold border border-indigo-100 flex items-center gap-1">
+              <span>📄 نموذج محاكاة ورقة A4 القياسية</span>
+            </div>
+
+            <!-- Simulated Margin Line Guide -->
+            <div class="absolute inset-4 pointer-events-none border border-dashed border-slate-200/50 rounded" title="حدود الهوامش القياسية للطباعة"></div>
+
+            <div id="print-preview-content" class="pt-4">
+              <!-- Dynamically populated report content -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div class="grid grid-cols-3 gap-3">
+          <button type="button" id="print-preview-copy-btn" class="py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-[10px] font-bold text-slate-800 dark:text-slate-200 transition-all active:scale-95 flex items-center justify-center gap-1">
+            📋 نسخ التقرير كمتن
+          </button>
+          <button type="button" id="print-preview-trigger-btn" class="py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-1">
+            🖨️ محاولة طباعة ورقية
+          </button>
+          <button type="button" id="close-print-preview-btn" class="py-2 bg-slate-200 dark:bg-slate-800 rounded-xl text-[10px] font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 transition-all active:scale-95">
+            إغلاق المعاينة
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detailed Single Case File Modal (Premium Healthcare Design) -->
+    <div id="single-case-overlay" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 hidden">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 w-full max-w-lg shadow-2xl transition-all duration-300 max-h-[90vh] overflow-y-auto space-y-5">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-3">
+          <div class="flex items-center gap-2.5">
+            <span class="text-2xl">📄</span>
+            <div>
+              <h2 id="case-modal-title" class="text-sm font-black text-slate-800 dark:text-white">ملف الحالة والتقرير الطبي المعتمد</h2>
+              <span id="case-modal-id" class="text-[9px] text-slate-400 dark:text-slate-500 font-mono font-bold block mt-0.5">رقم البلاغ: -</span>
+            </div>
+          </div>
+          <button id="close-case-modal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-850">
+            ❌
+          </button>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="space-y-4" dir="rtl">
+          <!-- Location & Patient -->
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 space-y-3.5">
+            <h3 id="case-details-header" class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">📋 بيانات المقيم والموقع</h3>
+            
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <div class="space-y-0.5">
+                <span id="case-wing-label" class="block text-[9px] text-slate-400">الجناح الطبي:</span>
+                <strong id="case-modal-wing" class="text-slate-800 dark:text-slate-200 font-black">-</strong>
+              </div>
+              <div class="space-y-0.5">
+                <span id="case-bed-label" class="block text-[9px] text-slate-400">رقم السرير:</span>
+                <strong id="case-modal-bed" class="text-slate-800 dark:text-slate-200 font-black font-mono">-</strong>
+              </div>
+              <div class="space-y-0.5 col-span-2">
+                <span id="case-resident-label" class="block text-[9px] text-slate-400">اسم المقيم المستغيث:</span>
+                <strong id="case-modal-resident" class="text-indigo-600 dark:text-indigo-400 font-black text-sm block mt-0.5">-</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes and Messages -->
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850 space-y-2">
+            <h4 id="case-notes-title" class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">📝 ملاحظات إضافية مرسلة مع الاستغاثة:</h4>
+            <p id="case-modal-notes" class="text-xs text-slate-600 dark:text-slate-300 font-bold italic leading-relaxed bg-white dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-100/60 dark:border-slate-800">-</p>
+          </div>
+
+          <!-- Resolution Note Display -->
+          <div class="bg-emerald-500/5 dark:bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10 space-y-2">
+            <h4 id="case-resolution-title" class="text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-wider">🛠️ تفاصيل كيفية الحل وإجراءات المعالجة المتخذة:</h4>
+            <p id="case-modal-resolution" class="text-xs text-slate-700 dark:text-slate-200 font-bold leading-relaxed bg-white dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-100/60 dark:border-emerald-500/15">-</p>
+          </div>
+
+          <!-- Timestamps and Responder -->
+          <div class="bg-amber-500/5 dark:bg-amber-500/5 p-4 rounded-2xl border border-amber-500/10 space-y-3.5">
+            <h3 id="case-timing-title" class="text-[10px] font-black text-amber-600 dark:text-amber-550 uppercase tracking-wider">⏱️ توقيتات الاستجابة ومؤشر السرعة</h3>
+            
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <div class="space-y-0.5">
+                <span id="case-created-label" class="block text-[9px] text-slate-400">توقيت إرسال الاستغاثة:</span>
+                <strong id="case-modal-created-at" class="text-slate-800 dark:text-slate-200 font-bold font-mono">-</strong>
+              </div>
+              <div class="space-y-0.5">
+                <span id="case-resolved-label" class="block text-[9px] text-slate-400">توقيت إغلاق البلاغ:</span>
+                <strong id="case-modal-resolved-at" class="text-slate-800 dark:text-slate-200 font-bold font-mono">-</strong>
+              </div>
+              <div class="space-y-0.5">
+                <span id="case-responder-label" class="block text-[9px] text-slate-400">العضو المستجيب (المغلق):</span>
+                <strong id="case-modal-resolver" class="text-slate-800 dark:text-slate-200 font-black">-</strong>
+              </div>
+              <div class="space-y-0.5">
+                <span id="case-duration-label" class="block text-[9px] text-slate-400">الزمن المستغرق للاستجابة:</span>
+                <strong id="case-modal-duration" class="text-amber-600 dark:text-amber-500 font-black font-mono text-sm block mt-0.5">-</strong>
+              </div>
+              <div class="col-span-2 pt-1 border-t border-slate-100 dark:border-slate-850/85 mt-1 flex items-center justify-between">
+                <span id="case-evaluation-label" class="text-[9px] font-bold text-slate-400">مستوى جودة الاستجابة للأطقم الطبية:</span>
+                <span id="case-modal-evaluation" class="px-3 py-1 rounded-lg text-[9px] font-black tracking-wide">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer / Print / Dismiss -->
+        <div class="grid grid-cols-3 gap-2.5 pt-2">
+          <button type="button" id="dismiss-case-modal" class="py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-[10px] font-black text-slate-800 dark:text-slate-200 transition-all active:scale-95">
+            إغلاق ملف الحالة
+          </button>
+          <button type="button" id="print-case-tv-btn" class="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-1">
+            👁️ معاينة مستقلة
+          </button>
+          <button type="button" id="print-case-btn" class="py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-1">
+            🖨️ طباعة التقرير الفردي
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Smart TV Live Monitoring Dashboard (Full Screen 16:9 Optimized) -->
+    <div id="smart-tv-dashboard" class="fixed inset-0 z-40 bg-slate-950 text-white flex flex-col hidden select-none" dir="rtl">
+      <!-- TV Header -->
+      <header class="bg-slate-900 border-b border-slate-800 px-8 py-5 flex items-center justify-between shrink-0 shadow-lg">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-red-600/10 border border-red-500/20 flex items-center justify-center text-2xl animate-pulse">
+            🚨
+          </div>
+          <div>
+            <h1 id="tv-title" class="text-xl font-black tracking-wide text-slate-100">نظام المراقبة والنداء المركزي المركزي (Smart TV Dashboard)</h1>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+              <span id="tv-subtitle" class="text-xs text-slate-400 font-bold">بث مباشر ورصد حي للاستغاثات 🟢</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Clock & KPI stats on TV header -->
+        <div class="flex items-center gap-8">
+          <div class="text-right border-l border-slate-800 pl-8">
+            <span id="tv-resolved-count-label" class="block text-[10px] text-slate-400 font-bold mb-0.5">الحالات المغلقة اليوم:</span>
+            <strong id="tv-resolved-count" class="text-lg font-black text-emerald-400 font-mono">0</strong>
+          </div>
+          
+          <div class="text-right border-l border-slate-800 pl-8">
+            <span id="tv-active-count-label" class="block text-[10px] text-slate-400 font-bold mb-0.5">البلاغات النشطة حالياً:</span>
+            <strong id="tv-active-count" class="text-lg font-black text-red-500 font-mono animate-pulse">0</strong>
+          </div>
+
+          <div class="text-right">
+            <span id="tv-current-date" class="block text-[10px] text-slate-400 font-bold mb-0.5">جاري التحميل...</span>
+            <strong id="tv-current-time" class="text-2xl font-black text-white font-mono tracking-wider">00:00:00</strong>
+          </div>
+        </div>
+      </header>
+
+      <!-- TV Main Stage -->
+      <main class="flex-1 p-8 overflow-y-auto bg-gradient-to-b from-slate-950 to-slate-900">
+        <!-- Live Alerts Grid (Huge cards for Smart TV viewing) -->
+        <div id="tv-alerts-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <!-- Operational Status Radar (Displays when no active alarms) -->
+        <div id="tv-empty-radar" class="hidden flex flex-col items-center justify-center py-20 space-y-6">
+          <div class="relative w-48 h-48 rounded-full border-2 border-emerald-500/10 flex items-center justify-center">
+            <!-- Ripple Pulses -->
+            <div class="absolute inset-0 rounded-full border border-emerald-500/20 animate-ping" style="animation-duration: 3s;"></div>
+            <div class="absolute inset-6 rounded-full border border-emerald-500/20 animate-ping" style="animation-duration: 2s;"></div>
+            <div class="absolute inset-12 rounded-full border border-emerald-500/30 animate-pulse"></div>
+            
+            <!-- Radar sweep line -->
+            <div class="absolute inset-0 rounded-full border-t-2 border-r-2 border-emerald-500/40 animate-spin" style="animation-duration: 4s;"></div>
+            
+            <span class="text-4xl">🛡️</span>
+          </div>
+          
+          <div class="text-center">
+            <h2 id="tv-stable-title" class="text-xl font-black text-emerald-400">جميع الأجنحة الطبية مستقرة بالكامل</h2>
+            <p id="tv-stable-desc" class="text-xs text-slate-400 mt-1.5 font-bold max-w-md mx-auto leading-relaxed">
+              يقوم نظام الرصد والمسح الفوري بتمشيط قنوات الاتصال سحابياً على مدار الثانية. لا توجد استغاثات أو بلاغات معلقة حالياً.
+            </p>
+          </div>
+        </div>
+      </main>
+
+      <!-- TV Footer -->
+      <footer class="bg-slate-900 border-t border-slate-800 px-8 py-3.5 flex items-center justify-between shrink-0 text-xs text-slate-400 font-bold">
+        <div class="flex items-center gap-2">
+          <span id="tv-footer-desc">شاشة الرصد والمتابعة مصممة خصيصاً لأجهزة الـ Smart TV وغرف العمليات المركزية.</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="tv-switch-standard-btn" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 hover:text-white rounded-lg transition-all border border-slate-700">
+            <span id="tv-switch-standard-btn-text">💻 الانتقال إلى الوضع العادي (موبايل / تابلت)</span>
+          </button>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Login Overlay -->
+    <div id="login-overlay" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 animate-fade-in">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl transition-all duration-300">
+        <!-- Brand logo icon -->
+        <div class="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+          <svg class="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        
+        <h2 id="login-title" class="text-lg font-black text-center text-slate-800 dark:text-white mb-1">بوابة الاستغاثة الآمنة</h2>
+        <p id="login-subtitle" class="text-xs text-center text-slate-400 dark:text-slate-500 mb-6">يرجى تسجيل الدخول للوصول إلى نظام الطوارئ SOS</p>
+        
+        <form id="login-form" class="space-y-4">
+          <div>
+            <label id="login-username-label" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">اسم المستخدم:</label>
+            <input type="text" id="login-username" required placeholder="مثال: admin" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-red-500/40 text-left font-mono" dir="ltr" />
+          </div>
+          
+          <div>
+            <label id="login-password-label" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">كلمة المرور:</label>
+            <input type="password" id="login-password" required placeholder="••••••" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-red-500/40 text-left font-mono" dir="ltr" />
+          </div>
+          
+          <div id="login-error" class="hidden text-xs text-red-500 font-bold bg-red-500/10 p-3 rounded-xl border border-red-500/20 text-center">
+            اسم المستخدم أو كلمة المرور غير صحيحة!
+          </div>
+          
+          <button type="submit" id="login-submit-btn" class="w-full py-2.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-extrabold rounded-xl shadow-lg shadow-red-500/20 transition-all text-center flex items-center justify-center gap-2">
+            <span id="login-submit-btn-text">🔓 تسجيل الدخول</span>
+          </button>
+        </form>
+        
+
+      </div>
+    </div>
+
+    <!-- Print Container Wrapper (Hidden on screen, styled via CSS print rules) -->
+    <div id="print-container-wrapper" class="hidden">
+      <div style="text-align: center; margin-bottom: 25px; border-bottom: 3px double #334155; padding-bottom: 15px;">
+        <h1 style="font-size: 22px; font-weight: 900; margin-bottom: 5px; color: #1e293b;">نظام الاستغاثة الذكي والنداء الفوري (SOS)</h1>
+        <h2 style="font-size: 16px; font-weight: 700; color: #475569; margin-bottom: 10px;">تقرير الأداء التشغيلي العام وسجل سرعة الاستجابة للنداءات المغلقة</h2>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-top: 15px; direction: rtl;">
+          <span>تاريخ إصدار التقرير: <strong id="print-date">جاري التوليد...</strong></span>
+          <span>المستلم: <strong>المالك (المدير)</strong></span>
+        </div>
+      </div>
+
+      <!-- KPI summary grid in print -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; text-align: center; direction: rtl;">
+        <div style="border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px;">
+          <span style="display: block; font-size: 10px; color: #64748b; margin-bottom: 4px;">متوسط زمن الاستجابة للمركز</span>
+          <strong id="print-avg-time" style="font-size: 14px; color: #0f172a;">-</strong>
+        </div>
+        <div style="border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px;">
+          <span style="display: block; font-size: 10px; color: #64748b; margin-bottom: 4px;">إجمالي الحالات المحلولة</span>
+          <strong id="print-total-calls" style="font-size: 14px; color: #059669;">0</strong>
+        </div>
+        <div style="border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px;">
+          <span style="display: block; font-size: 10px; color: #64748b; margin-bottom: 4px;">معدل الاستجابة القياسية الفورية</span>
+          <strong id="print-excellent-rate" style="font-size: 14px; color: #4f46e5;">0%</strong>
+        </div>
+      </div>
+
+      <div style="direction: rtl;">
+        <table style="width: 100%; border-collapse: collapse; text-align: right; font-size: 10px; border: 1px solid #cbd5e1;">
+          <thead>
+            <tr style="background-color: #f8fafc; border-bottom: 2px solid #cbd5e1;">
+              <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: right;">تاريخ البلاغ</th>
+              <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: right;">اسم المبلّغ</th>
+              <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: right;">الموقع والغرفة والسرير</th>
+              <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: right;">ملاحظات البلاغ</th>
+              <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: right;">توقيت الإغلاق</th>
+              <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: right;">المدة والتحليل التشغيلي</th>
+            </tr>
+          </thead>
+          <tbody id="print-table-body">
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 15px; font-size: 9px; text-align: center; color: #94a3b8; direction: rtl;">
+        تم إنتاج هذا المستند آلياً بواسطة لوحة تقارير نظام الاستغاثة المركزي. جميع الأوقات مأخوذة من خوادم قاعدة البيانات المركزية لضمان الدقة التشغيلية.
+      </div>
+    </div>
+
+    <!-- Single Case Print Container Wrapper (Hidden on screen, styled via CSS print rules) -->
+    <div id="single-case-print-wrapper" class="hidden">
+      <div style="text-align: center; margin-bottom: 25px; border-bottom: 3px double #dc2626; padding-bottom: 15px; direction: rtl;">
+        <h1 style="font-size: 22px; font-weight: 900; margin-bottom: 5px; color: #dc2626;">تقرير حالة طوارئ فردية عاجلة (SOS)</h1>
+        <h2 style="font-size: 14px; font-weight: 700; color: #475569; margin-bottom: 10px;">ملف تفصيلي معتمد لنداء الاستغاثة والاستجابة الطبية</h2>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-top: 15px;">
+          <span>رقم مستند التقرير: <strong id="print-case-id">-</strong></span>
+          <span>تاريخ الطباعة: <strong id="print-case-current-date">-</strong></span>
+        </div>
+      </div>
+
+      <div style="direction: rtl; font-size: 11px; line-height: 1.8; color: #334155; margin-bottom: 25px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background-color: #f8fafc;">
+        <h3 style="font-size: 13px; font-weight: 900; color: #0f172a; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;">📋 بيانات البلاغ والموقع:</h3>
+        <p>📍 <strong>الجناح الطبي:</strong> <span id="print-case-wing">-</span></p>
+        <p>🛏️ <strong>رقم السرير:</strong> <span id="print-case-bed">-</span></p>
+        <p>👤 <strong>المقيم المستغيث:</strong> <span id="print-case-resident">-</span></p>
+        <p>📝 <strong>ملاحظات البلاغ الطبية المرفقة:</strong> <span id="print-case-notes" style="font-style: italic; color: #475569;">-</span></p>
+      </div>
+
+      <div style="direction: rtl; font-size: 11px; line-height: 1.8; color: #334155; margin-bottom: 25px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background-color: #ecfdf5;">
+        <h3 style="font-size: 13px; font-weight: 900; color: #047857; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #a7f3d0; padding-bottom: 5px;">🛠️ كيفية الحل وإجراءات المعالجة المتخذة:</h3>
+        <p>📝 <span id="print-case-resolution" style="font-weight: bold; color: #065f46;">-</span></p>
+      </div>
+
+      <div style="direction: rtl; font-size: 11px; line-height: 1.8; color: #334155; margin-bottom: 25px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background-color: #fffbeb;">
+        <h3 style="font-size: 13px; font-weight: 900; color: #b45309; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #fde68a; padding-bottom: 5px;">⏱️ توقيتات الاستجابة والأداء التشغيلي:</h3>
+        <p>🔴 <strong>تاريخ ووقت إرسال الاستغاثة:</strong> <span id="print-case-created-at">-</span></p>
+        <p>🟢 <strong>تاريخ ووقت إغلاق النداء والحل:</strong> <span id="print-case-resolved-at">-</span></p>
+        <p>👤 <strong>العضو الطبي المسؤول (المغلق):</strong> <span id="print-case-resolver">-</span></p>
+        <p>⏱️ <strong>الزمن المستغرق للاستجابة:</strong> <strong id="print-case-duration" style="font-size: 14px; color: #b45309;">-</strong></p>
+        <p>🏆 <strong>تقييم كفاءة الاستجابة للنداء:</strong> <strong id="print-case-evaluation" style="font-size: 13px; color: #059669;">-</strong></p>
+      </div>
+
+      <div style="margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 15px; font-size: 9px; text-align: center; color: #94a3b8; direction: rtl;">
+        تم إنتاج هذا الملف التفصيلي بشكل آلي ومعتمد بالكامل بواسطة خوادم لوحة التحكم لنظام الاستغاثة المركزي لمطابقة معايير الرقابة الصحية والطبية لوزارة الصحة ورعاية المقيمين.
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="max-w-md w-full mx-auto px-4 py-4 text-center text-[11px] text-slate-400 dark:text-slate-500">
+      جميع الحقوق محفوظة © 2026. تطبيق نداء طوارئ SOS الذكي.
+    </footer>
+
+    <!-- Core Script -->
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

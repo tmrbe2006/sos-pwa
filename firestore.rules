@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 1. Global Safety Net - Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // 2. Global Security Helper Primitives
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    // 3. Validation Blueprints for Entities
+    function isValidDeviceToken(data) {
+      return data.keys().hasAll(['token', 'updatedAt', 'platform', 'deviceId'])
+        && data.keys().size() == 4
+        && data.token is string && data.token.size() <= 512
+        && data.platform == 'web'
+        && data.deviceId is string && data.deviceId.size() <= 128
+        && data.updatedAt == request.time;
+    }
+    
+    function isValidEmergencyCall(data) {
+      return data.keys().hasAll(['deviceId', 'message', 'timestamp', 'status'])
+        && data.deviceId is string && data.deviceId.size() <= 128
+        && data.message is string && data.message.size() <= 400
+        && (data.status == 'active' || data.status == 'processing' || data.status == 'resolved');
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['username', 'password', 'role', 'name'])
+        && data.keys().size() == 4
+        && data.username is string && data.username.size() <= 64
+        && data.password is string && data.password.size() <= 64
+        && (data.role == 'عامل' || data.role == 'فني طوارئ' || data.role == 'مراقب' || data.role == 'المالك')
+        && data.name is string && data.name.size() <= 128;
+    }
+    
+    // 4. Matches & Security Enforcements per Collection
+    match /device_tokens/{deviceId} {
+      allow read: if isValidId(deviceId);
+      allow create, update: if isValidId(deviceId) && isValidDeviceToken(request.resource.data);
+      allow delete: if false; // Clients cannot delete registered tokens
+    }
+    
+    match /emergency_calls/{callId} {
+      allow read: if isValidId(callId);
+      allow create: if isValidId(callId) && isValidEmergencyCall(request.resource.data);
+      allow update: if isValidId(callId) 
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'resolvedAt', 'resolutionNotes', 'resolvedBy']) 
+        && (request.resource.data.status == 'processing' || request.resource.data.status == 'resolved')
+        && (!request.resource.data.keys().contains('resolutionNotes') || (request.resource.data.resolutionNotes is string && request.resource.data.resolutionNotes.size() <= 1000))
+        && (!request.resource.data.keys().contains('resolvedBy') || (request.resource.data.resolvedBy is string && request.resource.data.resolvedBy.size() <= 128));
+      allow delete: if isValidId(callId); // Allow owners/managers to clear call logs
+    }
+
+    match /users/{userId} {
+      allow read, write: if isValidId(userId);
+    }
+
+    match /wings/{wingId} {
+      allow read: if isValidId(wingId);
+      allow write: if isValidId(wingId);
+    }
+
+    match /settings/{settingsDoc} {
+      allow read, write: if isValidId(settingsDoc);
+    }
+
+    match /user_locations/{deviceId} {
+      allow read, write, delete: if isValidId(deviceId);
+    }
+  }
+}

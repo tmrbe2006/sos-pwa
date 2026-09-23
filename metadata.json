@@ -1,0 +1,10 @@
+{
+  "name": "Remix نداء طوارئ SOS-version-upgrade-5",
+  "description": "تطبيق نداء طوارئ SOS ذكي وبسيط وقوي يدعم إشعارات PWA و Firebase",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

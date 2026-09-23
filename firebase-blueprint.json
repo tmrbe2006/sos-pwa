@@ -1,0 +1,191 @@
+{
+  "entities": {
+    "DeviceToken": {
+      "title": "DeviceToken",
+      "description": "FCM device tokens mapping for pushing emergency alerts",
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string",
+          "description": "The Firebase Cloud Messaging push token for the browser"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp indicating when the token was registered or updated"
+        },
+        "platform": {
+          "type": "string",
+          "description": "Identifies the operating platform, e.g. 'web' or 'android'"
+        },
+        "deviceId": {
+          "type": "string",
+          "description": "The unique device identifier stored in local client state"
+        }
+      },
+      "required": ["token", "updatedAt", "platform", "deviceId"]
+    },
+    "EmergencyCall": {
+      "title": "EmergencyCall",
+      "description": "Logs of triggered SOS alerts dispatched by active devices",
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string",
+          "description": "The unique identifier of the device initiating the SOS call"
+        },
+        "message": {
+          "type": "string",
+          "description": "Customizable emergency broadcast description message"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Strict server timestamp indicating when the alarm was triggered"
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the alert: active, processing, or resolved"
+        },
+        "resolutionNotes": {
+          "type": "string",
+          "description": "Notes detailing how the emergency was resolved"
+        },
+        "resolvedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp indicating when the alarm was resolved and closed"
+        },
+        "resolvedBy": {
+          "type": "string",
+          "description": "The name or role of the operator who resolved and closed the alarm"
+        },
+        "wingId": {
+          "type": "string",
+          "description": "Optional selected wing identifier"
+        },
+        "wingName": {
+          "type": "string",
+          "description": "Optional selected wing name"
+        },
+        "bedId": {
+          "type": "string",
+          "description": "Optional selected bed number"
+        },
+        "residentName": {
+          "type": "string",
+          "description": "Optional resident name in the selected bed"
+        }
+      },
+      "required": ["deviceId", "message", "timestamp", "status"]
+    },
+    "Wing": {
+      "title": "Wing",
+      "description": "Wings of the center containing bed mappings and resident profiles",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The custom Arabic name of the wing"
+        },
+        "beds": {
+          "type": "array",
+          "description": "Structured bed list containing bed ID and resident name"
+        }
+      },
+      "required": ["name", "beds"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Registered application users with roles determining view access.",
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "Unique username of the account"
+        },
+        "password": {
+          "type": "string",
+          "description": "Simple text password for access"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["عامل", "فني طوارئ", "مراقب", "المالك"],
+          "description": "Role classification: عامل, فني طوارئ, مراقب, or المالك"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human readable name"
+        }
+      },
+      "required": ["username", "password", "role", "name"]
+    },
+    "UserLocation": {
+      "title": "UserLocation",
+      "description": "Real-time location coordinates of connected users",
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string",
+          "description": "Device ID"
+        },
+        "token": {
+          "type": "string",
+          "description": "FCM device token"
+        },
+        "username": {
+          "type": "string",
+          "description": "Account username"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name"
+        },
+        "role": {
+          "type": "string",
+          "description": "Role description"
+        },
+        "lat": {
+          "type": "number",
+          "description": "Latitude coordinate"
+        },
+        "lng": {
+          "type": "number",
+          "description": "Longitude coordinate"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Time when the coordinate was updated"
+        },
+        "status": {
+          "type": "string",
+          "description": "User status: online or sos"
+        }
+      },
+      "required": ["deviceId", "username", "name", "role", "lat", "lng", "status"]
+    }
+  },
+  "firestore": {
+    "device_tokens/{deviceId}": {
+      "schema": "DeviceToken",
+      "description": "Subscribed device registration tokens list used for messaging notifications."
+    },
+    "emergency_calls/{callId}": {
+      "schema": "EmergencyCall",
+      "description": "History of SOS emergency operations logged by users globally."
+    },
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Registered app accounts with roles for authorization."
+    },
+    "wings/{wingId}": {
+      "schema": "Wing",
+      "description": "List of wings or wards containing bed-resident data"
+    },
+    "user_locations/{deviceId}": {
+      "schema": "UserLocation",
+      "description": "Real-time location data of connected users"
+    }
+  }
+}
